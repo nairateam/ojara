@@ -1,0 +1,518 @@
+// Ojara data model.
+//
+// Conventions
+// - Money is integer kobo (`...Kobo Int`). Never floats.
+// - Tenant-owned tables carry `storeId` and are protected twice: by the Prisma tenant extension
+//   (src/database/tenant-prisma.extension.ts) and by Postgres RLS policies (see the
+//   `*_rls` migration). Keep TENANT_MODELS in src/database/tenant-models.ts in sync with this file.
+// - Tables are snake_case plural via @@map; columns keep Prisma's camelCase names.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum PlatformRole {
+  USER
+  PLATFORM_ADMIN
+}
+
+enum StoreRole {
+  OWNER
+  MANAGER
+  STAFF
+}
+
+enum StoreStatus {
+  DRAFT
+  PUBLISHED
+  DISABLED
+  SUSPENDED
+}
+
+enum DomainStatus {
+  PENDING
+  VERIFIED
+  ACTIVE
+  FAILED
+}
+
+enum PlanKey {
+  FREE
+  STARTER
+  PROFESSIONAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLING
+  CANCELLED
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum FulfilmentStatus {
+  PENDING
+  PROCESSING
+  READY_FOR_DISPATCH
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  PAYSTACK
+}
+
+// ──────────────────── Auth (Better Auth core schema) ────────────────────
+
+model User {
+  id            String       @id
+  name          String
+  email         String       @unique
+  emailVerified Boolean      @default(false)
+  image         String?
+  /// Global role. Store roles live on StoreMember. Not settable through Better Auth input.
+  role          PlatformRole @default(USER)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  sessions    Session[]
+  accounts    Account[]
+  memberships StoreMember[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+// ───────────────────────────── Platform ─────────────────────────────
+
+model Plan {
+  id        String  @id @default(uuid(7))
+  key       PlanKey @unique
+  name      String
+  priceKobo Int
+  /// { maxProducts, maxImagesPerProduct, maxImageBytes, customDomain, staffAccounts, removeBranding }
+  limits    Json
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stores        Store[]
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model WebhookEvent {
+  id          String          @id @default(uuid(7))
+  provider    PaymentProvider
+  /// Provider event identity used for idempotency (unique per provider).
+  eventId     String
+  eventType   String
+  payload     Json
+  receivedAt  DateTime        @default(now())
+  processedAt DateTime?
+  error       String?
+
+  @@unique([provider, eventId])
+  @@index([processedAt])
+  @@map("webhook_events")
+}
+
+// ───────────────────────────── Stores ─────────────────────────────
+
+model Store {
+  id                String      @id @default(uuid(7))
+  name              String
+  slug              String      @unique
+  status            StoreStatus @default(DRAFT)
+  currency          String      @default("NGN") @db.VarChar(3)
+  country           String      @default("NG") @db.VarChar(2)
+  planId            String
+  // Branding
+  logoPublicId      String?
+  primaryColor      String?     @db.VarChar(7)
+  // Contact
+  contactEmail      String?
+  contactPhone      String?
+  whatsappNumber    String?
+  addressLine       String?
+  city              String?
+  state             String?
+  // Delivery
+  pickupEnabled     Boolean     @default(false)
+  pickupAddress     String?
+  // Paystack subaccount (only if Ojara routes funds; see DECISIONS.md open questions)
+  paystackSubaccountCode String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  archivedAt        DateTime?
+
+  plan          Plan           @relation(fields: [planId], references: [id])
+  members       StoreMember[]
+  domains       Domain[]
+  subscriptions Subscription[]
+  categories    Category[]
+  products      Product[]
+  variants      ProductVariant[]
+  images        ProductImage[]
+  customers     Customer[]
+  orders        Order[]
+  orderItems    OrderItem[]
+  payments      Payment[]
+  deliveryZones DeliveryZone[]
+  auditLogs     AuditLog[]
+
+  @@index([status])
+  @@map("stores")
+}
+
+model StoreMember {
+  id        String    @id @default(uuid(7))
+  storeId   String
+  userId    String
+  role      StoreRole @default(STAFF)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, userId])
+  @@index([userId])
+  @@map("store_members")
+}
+
+model Domain {
+  id                String       @id @default(uuid(7))
+  storeId           String
+  hostname          String       @unique
+  status            DomainStatus @default(PENDING)
+  verificationToken String
+  verifiedAt        DateTime?
+  lastCheckedAt     DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@map("domains")
+}
+
+model Subscription {
+  id                     String             @id @default(uuid(7))
+  storeId                String
+  planId                 String
+  status                 SubscriptionStatus @default(ACTIVE)
+  provider               PaymentProvider?
+  providerCustomerCode   String?
+  providerSubscriptionCode String?          @unique
+  currentPeriodEnd       DateTime?
+  cancelAt               DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  plan  Plan  @relation(fields: [planId], references: [id])
+
+  @@index([storeId, status])
+  @@map("subscriptions")
+}
+
+// ───────────────────────────── Catalogue ─────────────────────────────
+
+model Category {
+  id         String    @id @default(uuid(7))
+  storeId    String
+  name       String
+  slug       String
+  position   Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  archivedAt DateTime?
+
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([storeId, slug])
+  @@map("categories")
+}
+
+model Product {
+  id             String        @id @default(uuid(7))
+  storeId        String
+  categoryId     String?
+  name           String
+  slug           String
+  description    String?
+  status         ProductStatus @default(DRAFT)
+  basePriceKobo  Int
+  promoPriceKobo Int?
+  sku            String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  archivedAt     DateTime?
+
+  store    Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  variants ProductVariant[]
+  images   ProductImage[]
+
+  @@unique([storeId, slug])
+  @@unique([storeId, sku])
+  @@index([storeId, status])
+  @@index([categoryId])
+  @@map("products")
+}
+
+model ProductVariant {
+  id            String   @id @default(uuid(7))
+  storeId       String
+  productId     String
+  sku           String?
+  /// e.g. { "size": "M", "colour": "Indigo" }
+  options       Json     @default("{}")
+  /// Overrides the product base price when set.
+  priceKobo     Int?
+  stockQuantity Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  store   Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, sku])
+  @@index([productId])
+  @@map("product_variants")
+}
+
+model ProductImage {
+  id                 String   @id @default(uuid(7))
+  storeId            String
+  productId          String
+  /// Cloudinary public_id only. Delivery URLs are built at read time from named presets.
+  cloudinaryPublicId String
+  width              Int
+  height             Int
+  format             String?
+  position           Int      @default(0)
+  alt                String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  store   Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cloudinaryPublicId])
+  @@index([productId, position])
+  @@map("product_images")
+}
+
+// ───────────────────────────── Customers & orders ─────────────────────────────
+
+model Customer {
+  id        String   @id @default(uuid(7))
+  storeId   String
+  name      String
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store  Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@unique([storeId, email])
+  @@unique([storeId, phone])
+  @@map("customers")
+}
+
+model Order {
+  id               String           @id @default(uuid(7))
+  storeId          String
+  customerId       String?
+  /// Human-facing order number, sequential per store (e.g. #1042).
+  number           Int
+  paymentStatus    PaymentStatus    @default(UNPAID)
+  fulfilmentStatus FulfilmentStatus @default(PENDING)
+  currency         String           @default("NGN") @db.VarChar(3)
+  subtotalKobo     Int
+  deliveryFeeKobo  Int              @default(0)
+  totalKobo        Int
+  /// { name, phone, line1, city, state, landmark } snapshot at checkout; null for pickup.
+  deliveryAddress  Json?
+  deliveryZoneId   String?
+  isPickup         Boolean          @default(false)
+  notes            String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  store        Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer     Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  deliveryZone DeliveryZone? @relation(fields: [deliveryZoneId], references: [id], onDelete: SetNull)
+  items        OrderItem[]
+  payments     Payment[]
+
+  @@unique([storeId, number])
+  @@index([storeId, paymentStatus])
+  @@index([storeId, fulfilmentStatus])
+  @@index([storeId, createdAt])
+  @@index([customerId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String   @id @default(uuid(7))
+  storeId       String
+  orderId       String
+  productId     String?
+  variantId     String?
+  // Snapshot at time of purchase; never re-derived from the live catalogue.
+  name          String
+  sku           String?
+  variantLabel  String?
+  unitPriceKobo Int
+  quantity      Int
+  lineTotalKobo Int
+  createdAt     DateTime @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model Payment {
+  id          String          @id @default(uuid(7))
+  storeId     String
+  orderId     String
+  provider    PaymentProvider @default(PAYSTACK)
+  reference   String          @unique
+  amountKobo  Int
+  status      PaymentStatus   @default(PENDING)
+  rawPayload  Json?
+  paidAt      DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, status])
+  @@index([orderId])
+  @@map("payments")
+}
+
+// ───────────────────────────── Delivery ─────────────────────────────
+
+model DeliveryZone {
+  id         String    @id @default(uuid(7))
+  storeId    String
+  name       String
+  feeKobo    Int
+  /// e.g. ["Lekki", "Ajah", "Victoria Island"]
+  areas      Json      @default("[]")
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  archivedAt DateTime?
+
+  store  Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@index([storeId])
+  @@map("delivery_zones")
+}
+
+// ───────────────────────────── Audit ─────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(uuid(7))
+  /// Null for platform-level events (visible only with the RLS bypass).
+  storeId   String?
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  store Store? @relation(fields: [storeId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, createdAt])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
