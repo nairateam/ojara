@@ -7,11 +7,13 @@ export interface AuthUser {
   name: string;
   emailVerified: boolean;
   role: PlatformRole;
+  twoFactorEnabled: boolean;
 }
 
 export interface AuthSession {
   id: string;
   userId: string;
+  createdAt: Date;
   expiresAt: Date;
 }
 

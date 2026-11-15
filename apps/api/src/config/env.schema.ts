@@ -35,6 +35,16 @@ export const envSchema = z
     REDIS_URL: z.url(),
 
     BETTER_AUTH_SECRET: z.string().min(32),
+    /** Google sign-in is enabled only when both are set. */
+    GOOGLE_CLIENT_ID: optionalString,
+    GOOGLE_CLIENT_SECRET: optionalString,
+    /** Reject passwords found in known breaches (Have I Been Pwned, k-anonymity). */
+    PASSWORD_BREACH_CHECK: z
+      .enum(['true', 'false'])
+      .default('true')
+      .transform((v) => v === 'true'),
+    /** Absolute lifetime of a platform-admin session, in hours. */
+    ADMIN_SESSION_MAX_HOURS: z.coerce.number().int().min(1).max(72).default(8),
 
     RESEND_API_KEY: optionalString,
     EMAIL_FROM: z.string().min(3),
@@ -57,6 +67,13 @@ export const envSchema = z
         if (!env[key])
           ctx.addIssue({ code: 'custom', path: [key], message: 'Required in production' });
       }
+    }
+    if (Boolean(env.GOOGLE_CLIENT_ID) !== Boolean(env.GOOGLE_CLIENT_SECRET)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['GOOGLE_CLIENT_SECRET'],
+        message: 'Set both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, or neither',
+      });
     }
   });
 

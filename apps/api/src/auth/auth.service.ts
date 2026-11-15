@@ -30,8 +30,14 @@ export class AuthService {
         name: user.name,
         emailVerified: user.emailVerified,
         role: user.role === 'PLATFORM_ADMIN' ? 'PLATFORM_ADMIN' : 'USER',
+        twoFactorEnabled: user.twoFactorEnabled === true,
       },
-      session: { id: session.id, userId: session.userId, expiresAt: session.expiresAt },
+      session: {
+        id: session.id,
+        userId: session.userId,
+        createdAt: session.createdAt,
+        expiresAt: session.expiresAt,
+      },
     };
   }
 }

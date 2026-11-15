@@ -10,10 +10,12 @@ import { AuthModule } from './auth/auth.module.js';
 import { BillingModule } from './billing/billing.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
+import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storage.js';
 import { AppConfigService } from './config/app-config.service.js';
 import { ConfigModule } from './config/config.module.js';
 import { CustomersModule } from './customers/customers.module.js';
 import { DatabaseModule } from './database/database.module.js';
+import { RedisService } from './database/redis.service.js';
 import { DeliveryModule } from './delivery/delivery.module.js';
 import { DomainsModule } from './domains/domains.module.js';
 import { EmailModule } from './email/email.module.js';
@@ -59,9 +61,14 @@ import { UsersModule } from './users/users.module.js';
         },
       }),
     }),
-    ThrottlerModule.forRoot({
-      // In-memory storage. TODO: switch to a Redis-backed storage before running >1 API instance.
-      throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }],
+    ThrottlerModule.forRootAsync({
+      // Counters live in Redis so limits hold across API instances; falls back to memory if Redis
+      // is down. Auth endpoints have stricter limits enforced by Better Auth (stored in Postgres).
+      inject: [RedisService],
+      useFactory: (redis: RedisService) => ({
+        throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }],
+        storage: new RedisThrottlerStorage(redis.client),
+      }),
     }),
     BullModule.forRootAsync({
       inject: [AppConfigService],

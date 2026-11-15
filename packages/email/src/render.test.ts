@@ -26,3 +26,12 @@ describe('renderEmail', () => {
     expect(order.text).toContain('#1042');
   });
 });
+
+describe('password reset email', () => {
+  it('renders the reset link in html and text', async () => {
+    const url = 'https://api.ojara.store/v1/auth/reset-password/tok?callbackURL=x';
+    const { html, text } = await renderEmail('password-reset', { name: 'Ada', resetUrl: url });
+    expect(html).toContain('Choose a new password');
+    expect(text).toContain('https://api.ojara.store/v1/auth/reset-password/tok');
+  });
+});

@@ -7,7 +7,8 @@ import { Checkbox } from '@/components/ui/form-controls';
 import { Input } from '@/components/ui/input';
 import { ApiRequestError } from '@/lib/api/client';
 import { signUpWithEmail } from '@/lib/api/browser';
-import { altButtonClass, OrDivider } from './auth-shell';
+import { OrDivider } from './auth-shell';
+import { GoogleButton } from './google-button';
 import { textField } from './form-data';
 import { FormField } from './form-field';
 import { PasswordInput, scorePassword, StrengthMeter } from './password-input';
@@ -15,12 +16,20 @@ import { PasswordInput, scorePassword, StrengthMeter } from './password-input';
 /**
  * 02.02 merchant sign-up (POST /v1/auth/sign-up/email). Better Auth sends the verification email
  * via the API's email queue; the merchant must verify before logging in.
- * The phone number and "Continue with Google" are visual only (the phone is not sent anywhere yet).
+ * The phone number is visual only (not sent anywhere yet). Google sign-up shows when configured.
  */
-export function SignupForm() {
+function signupErrorMessage(err: unknown): string {
+  if (!(err instanceof ApiRequestError)) return 'Something went wrong. Please try again.';
+  if (err.code === 'PASSWORD_COMPROMISED') {
+    return 'This password has appeared in a data breach. Please choose a different one.';
+  }
+  if (err.status === 429) return 'Too many attempts. Please wait a minute and try again.';
+  return err.body ? err.message : 'Something went wrong. Please try again.';
+}
+
+export function SignupForm({ googleSignIn = false }: { googleSignIn?: boolean }) {
   const [error, setError] = useState<string>();
   const [termsError, setTermsError] = useState<string>();
-  const [notice, setNotice] = useState<string>();
   const [sentTo, setSentTo] = useState<string>();
   const [pending, setPending] = useState(false);
   const [score, setScore] = useState(0);
@@ -44,11 +53,7 @@ export function SignupForm() {
       });
       setSentTo(email);
     } catch (err) {
-      setError(
-        err instanceof ApiRequestError && err.body
-          ? String(err.message)
-          : 'Something went wrong. Please try again.',
-      );
+      setError(signupErrorMessage(err));
     } finally {
       setPending(false);
     }
@@ -160,24 +165,14 @@ export function SignupForm() {
           </>
         )}
       </Button>
-      <OrDivider />
-      <button
-        type="button"
-        className={altButtonClass}
-        onClick={() => setNotice('Google sign-up is coming soon. Use your email for now.')}
-      >
-        <span
-          aria-hidden
-          className="flex size-[18px] items-center justify-center rounded-full bg-[#4285F4] text-[11px] font-bold text-surface"
-        >
-          G
-        </span>
-        Continue with Google
-      </button>
-      {notice ? (
-        <p className="text-center text-xs text-fg-muted" role="status">
-          {notice}
-        </p>
+      {googleSignIn ? (
+        <>
+          <OrDivider />
+          <GoogleButton />
+          <p className="text-center text-xs text-fg-subtle">
+            By continuing with Google you agree to Ojara’s Terms and Seller Policy.
+          </p>
+        </>
       ) : null}
     </form>
   );

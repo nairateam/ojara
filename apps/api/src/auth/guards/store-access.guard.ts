@@ -8,20 +8,23 @@ import {
 import { Reflector } from '@nestjs/core';
 import type { StoreRole } from '@ojara/shared';
 import { STORE_ROLES_KEY } from '../../common/decorators/roles.decorator.js';
+import { AppConfigService } from '../../config/app-config.service.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import { TenantContext } from '../../tenancy/tenant-context.js';
+import { assertAdminSessionAllowed } from '../admin-policy.js';
 import type { AuthenticatedRequest } from '../auth.types.js';
 
 /**
  * Confirms the signed-in user is a member of the store in `:storeId` (optionally with one of the
  * @StoreRoles), then binds the request's TenantContext to that store. Platform admins may access
- * any store (support use); their access is still scoped to that one store.
+ * any store (support use) but only with 2FA and a fresh session; access stays scoped to that store.
  */
 @Injectable()
 export class StoreAccessGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService,
+    private readonly config: AppConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -49,8 +52,13 @@ export class StoreAccessGuard implements CanActivate {
 
     const isAdmin = user.role === 'PLATFORM_ADMIN';
     if (!member && !isAdmin) throw new ForbiddenException('You are not a member of this store');
-    if (member && required?.length && !required.includes(member.role) && !isAdmin) {
+    const roleAllowed = !required?.length || (member !== null && required.includes(member.role));
+    if (member && !roleAllowed && !isAdmin) {
       throw new ForbiddenException('Your store role does not allow this action');
+    }
+    // Admin powers (not a member, or overriding a store role) need 2FA and a fresh session.
+    if (isAdmin && (!member || !roleAllowed)) {
+      assertAdminSessionAllowed(user, req.session, this.config.env.ADMIN_SESSION_MAX_HOURS);
     }
 
     req.storeMembership = { storeId, role: member?.role ?? 'OWNER' };

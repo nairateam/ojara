@@ -1,6 +1,7 @@
 import { type ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { describe, expect, it, vi } from 'vitest';
+import type { AppConfigService } from '../../config/app-config.service.js';
 import type { PrismaService } from '../../database/prisma.service.js';
 import { TenantContext } from '../../tenancy/tenant-context.js';
 import type { AuthenticatedRequest, AuthUser } from '../auth.types.js';
@@ -11,7 +12,8 @@ function setup(member: { role: 'OWNER' | 'MANAGER' | 'STAFF' } | null, required?
   const prisma = { db: { storeMember: { findUnique } } } as unknown as PrismaService;
   const reflector = new Reflector();
   vi.spyOn(reflector, 'getAllAndOverride').mockReturnValue(required);
-  return { guard: new StoreAccessGuard(reflector, prisma), findUnique };
+  const config = { env: { ADMIN_SESSION_MAX_HOURS: 8 } } as AppConfigService;
+  return { guard: new StoreAccessGuard(reflector, prisma, config), findUnique };
 }
 
 function ctx(req: Partial<AuthenticatedRequest>): ExecutionContext {
@@ -22,7 +24,16 @@ function ctx(req: Partial<AuthenticatedRequest>): ExecutionContext {
   } as unknown as ExecutionContext;
 }
 
-const user: AuthUser = { id: 'u1', email: 'a@b.c', name: 'A', emailVerified: true, role: 'USER' };
+const user: AuthUser = {
+  id: 'u1',
+  email: 'a@b.c',
+  name: 'A',
+  emailVerified: true,
+  role: 'USER',
+  twoFactorEnabled: false,
+};
+const admin: AuthUser = { ...user, id: 'admin', role: 'PLATFORM_ADMIN' };
+const freshSession = { id: 's', userId: 'admin', createdAt: new Date(), expiresAt: new Date() };
 
 describe('StoreAccessGuard', () => {
   it('allows members and binds the tenant context to the store', async () => {
@@ -49,6 +60,28 @@ describe('StoreAccessGuard', () => {
     const req = { user, params: { storeId: 'store_a' } } as Partial<AuthenticatedRequest>;
     await TenantContext.run(async () => {
       await expect(guard.canActivate(ctx(req))).rejects.toBeInstanceOf(ForbiddenException);
+    });
+  });
+
+  it('lets a platform admin into a store they do not belong to only with 2FA', async () => {
+    const { guard } = setup(null);
+    const withoutTwoFactor = {
+      user: admin,
+      session: freshSession,
+      params: { storeId: 'store_a' },
+    } as Partial<AuthenticatedRequest>;
+    await TenantContext.run(async () => {
+      await expect(guard.canActivate(ctx(withoutTwoFactor))).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
+    const withTwoFactor = {
+      user: { ...admin, twoFactorEnabled: true },
+      session: freshSession,
+      params: { storeId: 'store_a' },
+    } as Partial<AuthenticatedRequest>;
+    await TenantContext.run(async () => {
+      await expect(guard.canActivate(ctx(withTwoFactor))).resolves.toBe(true);
     });
   });
 });

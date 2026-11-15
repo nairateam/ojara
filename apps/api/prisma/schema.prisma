@@ -96,11 +96,14 @@ model User {
   image         String?
   /// Global role. Store roles live on StoreMember. Not settable through Better Auth input.
   role          PlatformRole @default(USER)
+  /// Set by the Better Auth twoFactor plugin once an authenticator app is verified.
+  twoFactorEnabled Boolean   @default(false)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
   sessions    Session[]
   accounts    Account[]
+  twoFactors  TwoFactor[]
   memberships StoreMember[]
 
   @@map("users")
@@ -153,6 +156,33 @@ model Verification {
 
   @@index([identifier])
   @@map("verifications")
+}
+
+/// Better Auth twoFactor plugin: encrypted TOTP secret and hashed backup codes per user.
+model TwoFactor {
+  id                      String    @id
+  secret                  String
+  backupCodes             String
+  userId                  String
+  verified                Boolean   @default(true)
+  failedVerificationCount Int       @default(0)
+  lockedUntil             DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([secret])
+  @@index([userId])
+  @@map("two_factors")
+}
+
+/// Better Auth rate-limit counters (storage: "database"), shared by all API instances.
+model RateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rate_limits")
 }
 
 // ───────────────────────────── Platform ─────────────────────────────

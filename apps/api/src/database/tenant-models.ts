@@ -27,6 +27,8 @@ export const GLOBAL_MODELS = new Set<string>([
   'Session',
   'Account',
   'Verification',
+  'TwoFactor',
+  'RateLimit',
   'Plan',
   'WebhookEvent',
 ]);

@@ -9,6 +9,8 @@ export const apiErrorSchema = z.object({
   statusCode: z.number().int(),
   error: z.string(),
   message: z.union([z.string(), z.array(z.string())]),
+  /** Stable machine-readable reason, e.g. TWO_FACTOR_REQUIRED. */
+  code: z.string().optional(),
   requestId: z.string().optional(),
   path: z.string(),
   timestamp: z.string(),

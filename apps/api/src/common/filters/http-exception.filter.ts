@@ -37,7 +37,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const res = ctx.getResponse<Response>();
     const req = ctx.getRequest<Request & { id?: unknown }>();
 
-    const { status, message } = this.describe(exception);
+    const { status, message, code } = this.describe(exception);
     if (status >= 500) {
       this.logger.error({ err: exception, path: req.url }, 'Unhandled exception');
     }
@@ -46,6 +46,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       statusCode: status,
       error: statusTitle(status),
       message,
+      ...(code ? { code } : {}),
       requestId: typeof req.id === 'string' ? req.id : undefined,
       path: req.originalUrl ?? req.url,
       timestamp: new Date().toISOString(),
@@ -53,14 +54,19 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     res.status(status).json(body);
   }
 
-  private describe(exception: unknown): { status: number; message: string | string[] } {
+  private describe(exception: unknown): {
+    status: number;
+    message: string | string[];
+    code?: string;
+  } {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const response = exception.getResponse();
       if (typeof response === 'string') return { status, message: response };
-      const msg = (response as { message?: unknown }).message;
+      const { message: msg, code } = response as { message?: unknown; code?: unknown };
+      const codeField = typeof code === 'string' ? { code } : {};
       if (typeof msg === 'string' || Array.isArray(msg)) {
-        return { status, message: msg as string | string[] };
+        return { status, message: msg as string | string[], ...codeField };
       }
       return { status, message: exception.message };
     }

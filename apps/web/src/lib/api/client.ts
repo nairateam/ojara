@@ -1,25 +1,42 @@
-import { type ApiError, apiErrorSchema } from '@ojara/shared';
-import type { z } from 'zod';
+import { apiErrorSchema } from '@ojara/shared';
+import { z } from 'zod';
 
 /**
  * Thin typed fetch wrapper. Response bodies are validated with the same Zod schemas the API uses
  * (from @ojara/shared), so the types are shared at compile time and checked at runtime.
  * (Chosen over OpenAPI code generation; see docs/DECISIONS.md.)
  */
+
+/** Better Auth's own error body (its endpoints live under /v1/auth/*). */
+const betterAuthErrorSchema = z.object({ message: z.string(), code: z.string().optional() });
+
+export interface ApiErrorInfo {
+  message: string;
+  /** Stable machine-readable reason, e.g. TWO_FACTOR_REQUIRED, PASSWORD_COMPROMISED. */
+  code: string | undefined;
+}
+
 export class ApiRequestError extends Error {
+  readonly code: string | undefined;
+
   constructor(
     readonly status: number,
-    readonly body: ApiError | null,
+    readonly body: ApiErrorInfo | null,
   ) {
-    super(
-      body
-        ? Array.isArray(body.message)
-          ? body.message.join(', ')
-          : body.message
-        : `API request failed (${status})`,
-    );
+    super(body?.message ?? `API request failed (${status})`);
     this.name = 'ApiRequestError';
+    this.code = body?.code;
   }
+}
+
+function parseError(json: unknown): ApiErrorInfo | null {
+  const ojara = apiErrorSchema.safeParse(json);
+  if (ojara.success) {
+    const { message, code } = ojara.data;
+    return { message: Array.isArray(message) ? message.join(', ') : message, code };
+  }
+  const auth = betterAuthErrorSchema.safeParse(json);
+  return auth.success ? { message: auth.data.message, code: auth.data.code } : null;
 }
 
 export interface ApiRequest<S extends z.ZodType> {
@@ -50,9 +67,6 @@ export async function apiRequest<S extends z.ZodType>(req: ApiRequest<S>): Promi
   });
 
   const json: unknown = await res.json().catch(() => null);
-  if (!res.ok) {
-    const parsed = apiErrorSchema.safeParse(json);
-    throw new ApiRequestError(res.status, parsed.success ? parsed.data : null);
-  }
+  if (!res.ok) throw new ApiRequestError(res.status, parseError(json));
   return req.schema.parse(json);
 }

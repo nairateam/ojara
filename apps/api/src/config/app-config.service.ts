@@ -24,6 +24,8 @@ export class AppConfigService {
       rootDomain: this.env.ROOT_DOMAIN,
       paystackPublicKey: this.env.PAYSTACK_PUBLIC_KEY ?? null,
       cloudinaryCloudName: this.env.CLOUDINARY_CLOUD_NAME ?? null,
+      /** Whether "Continue with Google" should be offered. */
+      googleSignIn: Boolean(this.env.GOOGLE_CLIENT_ID && this.env.GOOGLE_CLIENT_SECRET),
     };
   }
 }
