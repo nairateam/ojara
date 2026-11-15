@@ -1,0 +1,47 @@
+{
+  "name": "ojara",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.21.0",
+  "engines": {
+    "node": ">=26.13.1 <27",
+    "pnpm": ">=12.21.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "pnpm --filter @ojara/api test:integration",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --filter @ojara/api db:generate",
+    "db:migrate": "pnpm --filter @ojara/api db:migrate",
+    "db:deploy": "pnpm --filter @ojara/api db:deploy",
+    "db:seed": "pnpm --filter @ojara/api db:seed",
+    "db:reset": "pnpm --filter @ojara/api db:reset",
+    "infra:up": "docker compose up -d --wait",
+    "infra:down": "docker compose down",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "eslint --fix --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css}": "prettier --write"
+  },
+  "devDependencies": {
+    "@ojara/eslint-config": "workspace:*",
+    "@ojara/tsconfig": "workspace:*",
+    "@types/node": "26.6.6",
+    "eslint": "9.39.5",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0",
+    "prettier": "3.10.1",
+    "turbo": "2.11.11",
+    "typescript": "6.0.3",
+    "vitest": "5.1.0"
+  }
+}
