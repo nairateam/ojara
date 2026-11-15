@@ -1,0 +1,265 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+/*
+ * Ojara design tokens — single source of truth for the web app.
+ * Source: ~/Desktop/Startup/ojara design/tokens/ojara-terra.tokens.json + the HTML/PNG screens.
+ * Brand rule (Terra): two colours, paper #EBEDDF and forest #333A2F, plus tints. No pure white in
+ * Ojara surfaces; status colours are the only exception. The designs have NO dark mode.
+ * Storefront screens use the merchant's brand (--store-*), not Ojara's.
+ */
+:root {
+  /* Brand */
+  --ojara-paper: #ebeddf;
+  --ojara-forest: #333a2f;
+
+  /* Surfaces */
+  --ojara-bg: var(--ojara-paper);
+  --ojara-surface: #f5f6ee;
+  --ojara-surface-muted: #e0e3d1;
+  --ojara-selected: #e4e7d6;
+  --ojara-border: #d6dac6;
+  --ojara-border-strong: #b4b9a8;
+  --ojara-chart-muted: #cfd4bd;
+  --ojara-toggle-off: #c4c9b6;
+
+  /* Text */
+  --ojara-fg: var(--ojara-forest);
+  --ojara-fg-muted: #5e6559;
+  --ojara-fg-subtle: #8d9387;
+  --ojara-fg-on-dark: #c9ccbc;
+  --ojara-fg-lead: #4a5244;
+
+  /* Merchant sidebar */
+  --ojara-sidebar: var(--ojara-forest);
+  --ojara-sidebar-active: #434b3e;
+  --ojara-sidebar-fg: #c9ccbc;
+  --ojara-sidebar-muted: #8d9387;
+  --ojara-sidebar-strong: var(--ojara-paper);
+  --ojara-sidebar-line: #454d40;
+  --ojara-sidebar-tint: rgb(235 237 223 / 0.08); /* #EBEDDF14 */
+
+  /* Admin sidebar (darker) */
+  --ojara-admin-sidebar: #2a3027;
+  --ojara-admin-active: rgb(235 237 223 / 0.07); /* #EBEDDF12 */
+  --ojara-admin-fg: #b4b9a8;
+  --ojara-admin-heading: #80877a;
+
+  /* Status (exception to the two-colour rule) */
+  --ojara-success: #1e7a4c;
+  --ojara-success-soft: #e2f1e8;
+  --ojara-warning: #a86a12;
+  --ojara-warning-soft: #fbefd6;
+  --ojara-attention-soft: #fbefd8;
+  --ojara-danger: #b93a28;
+  --ojara-danger-soft: #fbe4df;
+  --ojara-danger-ink: #7a2a1e;
+  --ojara-info: #2c66a8;
+  --ojara-info-soft: #e3edf8;
+  --ojara-toast: #1c1b18;
+
+  /* Storefront defaults (overridden per tenant from Store.primaryColor) */
+  --store-primary: #2a3a7c;
+  --store-primary-fg: #ffffff;
+  --store-accent: #e9a23b;
+  --store-accent-ink: #14183a;
+  --store-page: #fbf8f2;
+  --store-band: #f4efe6;
+  --store-border: #e8e2d6;
+  --store-card: #ffffff;
+  --store-ink: #1c1b18;
+  --store-body: #5e594f;
+  --store-muted: #8a857a;
+  --store-eyebrow: #b5532e;
+  --store-footer-fg: #a9a396;
+  --store-footer-line: #34322d;
+
+  /* shadcn/ui semantic variables, mapped onto Terra */
+  --background: var(--ojara-bg);
+  --foreground: var(--ojara-fg);
+  --card: var(--ojara-surface);
+  --card-foreground: var(--ojara-fg);
+  --popover: var(--ojara-surface);
+  --popover-foreground: var(--ojara-fg);
+  --primary: var(--ojara-forest);
+  --primary-foreground: var(--ojara-paper);
+  --secondary: var(--ojara-surface);
+  --secondary-foreground: var(--ojara-fg);
+  --muted: var(--ojara-surface-muted);
+  --muted-foreground: var(--ojara-fg-muted);
+  --accent: var(--ojara-selected);
+  --accent-foreground: var(--ojara-fg);
+  --destructive: var(--ojara-danger);
+  --border: var(--ojara-border);
+  --input: var(--ojara-border);
+  --ring: var(--ojara-forest);
+  --radius: 0.5rem;
+  --chart-1: var(--ojara-forest);
+  --chart-2: var(--ojara-chart-muted);
+  --chart-3: var(--ojara-info);
+  --chart-4: var(--ojara-warning);
+  --chart-5: var(--ojara-success);
+  --sidebar: var(--ojara-sidebar);
+  --sidebar-foreground: var(--ojara-sidebar-fg);
+  --sidebar-primary: var(--ojara-paper);
+  --sidebar-primary-foreground: var(--ojara-forest);
+  --sidebar-accent: var(--ojara-sidebar-active);
+  --sidebar-accent-foreground: var(--ojara-paper);
+  --sidebar-border: var(--ojara-sidebar-line);
+  --sidebar-ring: var(--ojara-paper);
+}
+
+@theme inline {
+  /* Fonts (loaded with next/font in app/layout.tsx) */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-heading: var(--font-display);
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --font-serif: var(--font-fraunces), Georgia, serif;
+
+  /* Ojara colours */
+  --color-paper: var(--ojara-paper);
+  --color-forest: var(--ojara-forest);
+  --color-surface: var(--ojara-surface);
+  --color-surface-muted: var(--ojara-surface-muted);
+  --color-selected: var(--ojara-selected);
+  --color-line: var(--ojara-border);
+  --color-line-strong: var(--ojara-border-strong);
+  --color-chart-muted: var(--ojara-chart-muted);
+  --color-toggle-off: var(--ojara-toggle-off);
+  --color-fg: var(--ojara-fg);
+  --color-fg-muted: var(--ojara-fg-muted);
+  --color-fg-subtle: var(--ojara-fg-subtle);
+  --color-fg-on-dark: var(--ojara-fg-on-dark);
+  --color-fg-lead: var(--ojara-fg-lead);
+  --color-nav: var(--ojara-sidebar);
+  --color-nav-active: var(--ojara-sidebar-active);
+  --color-nav-fg: var(--ojara-sidebar-fg);
+  --color-nav-muted: var(--ojara-sidebar-muted);
+  --color-nav-strong: var(--ojara-sidebar-strong);
+  --color-nav-line: var(--ojara-sidebar-line);
+  --color-nav-tint: var(--ojara-sidebar-tint);
+  --color-admin-nav: var(--ojara-admin-sidebar);
+  --color-admin-active: var(--ojara-admin-active);
+  --color-admin-fg: var(--ojara-admin-fg);
+  --color-admin-heading: var(--ojara-admin-heading);
+  --color-success: var(--ojara-success);
+  --color-success-soft: var(--ojara-success-soft);
+  --color-warning: var(--ojara-warning);
+  --color-warning-soft: var(--ojara-warning-soft);
+  --color-attention-soft: var(--ojara-attention-soft);
+  --color-danger: var(--ojara-danger);
+  --color-danger-soft: var(--ojara-danger-soft);
+  --color-danger-ink: var(--ojara-danger-ink);
+  --color-info: var(--ojara-info);
+  --color-info-soft: var(--ojara-info-soft);
+  --color-toast: var(--ojara-toast);
+
+  /* Storefront colours */
+  --color-store-primary: var(--store-primary);
+  --color-store-primary-fg: var(--store-primary-fg);
+  --color-store-accent: var(--store-accent);
+  --color-store-accent-ink: var(--store-accent-ink);
+  --color-store-page: var(--store-page);
+  --color-store-band: var(--store-band);
+  --color-store-border: var(--store-border);
+  --color-store-card: var(--store-card);
+  --color-store-ink: var(--store-ink);
+  --color-store-body: var(--store-body);
+  --color-store-muted: var(--store-muted);
+  --color-store-eyebrow: var(--store-eyebrow);
+  --color-store-footer-fg: var(--store-footer-fg);
+  --color-store-footer-line: var(--store-footer-line);
+
+  /* shadcn semantic colours */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radius (tokens: sm 6, md 8, lg 12, xl 20, pill 999; 4 and 10/14 appear on tags/toasts/popovers) */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-pill: 999px;
+
+  /* Type scale used by the app screens (size / line-height) */
+  --text-micro: 10px;
+  --text-micro--line-height: 14px;
+  --text-2xs: 11px;
+  --text-2xs--line-height: 14px;
+  --text-xs: 12px;
+  --text-xs--line-height: 17px;
+  --text-ui: 13px;
+  --text-ui--line-height: 19px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-card: 15px;
+  --text-card--line-height: 21px;
+  --text-h-panel: 24px;
+  --text-h-panel--line-height: 30px;
+  --text-h-page: 28px;
+  --text-h-page--line-height: 34px;
+
+  /* Letter spacing used on Bricolage headings and uppercase labels */
+  --tracking-display: -0.5px;
+  --tracking-display-tight: -0.8px;
+  --tracking-label: 0.8px;
+  --tracking-eyebrow: 1.6px;
+
+  /* Shadows (cards have none; these are the only shadows in the designs) */
+  --shadow-segment: 0 1px 2px #0000001a;
+  --shadow-focus: 0 0 6px #333a2f33;
+  --shadow-popover: 0 16px 40px #333a2f33;
+  --shadow-mock: 0 20px 40px #333a2f33;
+  --shadow-toast: 0 8px 24px #00000033;
+  --shadow-sticky: 0 -4px 16px #0000000f;
+  --shadow-fab: 0 6px 16px #00000033;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+  :focus-visible {
+    outline: 1.5px solid var(--ojara-forest);
+    outline-offset: 2px;
+  }
+}
