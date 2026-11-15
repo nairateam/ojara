@@ -25,6 +25,17 @@ export const envSchema = z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
     CORS_ORIGINS: csv,
+    /**
+     * Express "trust proxy": which proxies may set X-Forwarded-For. "false" when clients connect
+     * directly; a hop count (e.g. "1") or IP/CIDR list behind a load balancer. Never "true" in
+     * production unless every request passes through your proxy.
+     */
+    TRUST_PROXY: z
+      .string()
+      .default('false')
+      .transform((v): boolean | number | string =>
+        v === 'true' ? true : v === 'false' ? false : /^\d+$/.test(v) ? Number(v) : v,
+      ),
 
     ROOT_DOMAIN: z.string().trim().min(1).default(DEFAULT_ROOT_DOMAIN),
     DASHBOARD_URL: z.url(),

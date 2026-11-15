@@ -2,10 +2,11 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
 import { renderEmail } from '@ojara/email';
 import type { Job } from 'bullmq';
+import { WORKER_OPTIONS } from '../common/queue/worker-options.js';
 import type { EmailJob } from './email.producer.js';
 import { EMAIL_QUEUE, EMAIL_SERVICE, type EmailService, type SendResult } from './email.service.js';
 
-@Processor(EMAIL_QUEUE)
+@Processor(EMAIL_QUEUE, WORKER_OPTIONS)
 export class EmailProcessor extends WorkerHost {
   private readonly logger = new Logger(EmailProcessor.name);
 

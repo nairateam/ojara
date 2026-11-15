@@ -9,6 +9,12 @@ import type { PrismaClient } from '../generated/prisma/client.js';
 export const AUTH_BASE_PATH = '/v1/auth';
 
 /**
+ * Request header carrying the client IP for rate limiting. Set by bootstrap.ts from Express req.ip
+ * (TRUST_PROXY-aware), overwriting any client-supplied value.
+ */
+export const CLIENT_IP_HEADER = 'x-ojara-client-ip';
+
+/**
  * The only Better Auth endpoints allowed to create a session for a PLATFORM_ADMIN. Admins must use
  * email + password followed by a second factor; Google sign-in, email-verification auto sign-in
  * and any future passwordless method are refused for them. (An admin who hasn't enrolled 2FA yet
@@ -171,8 +177,8 @@ export function createAuth(env: Env, prisma: PrismaClient, emails: EmailProducer
       cookiePrefix: 'ojara',
       useSecureCookies: isProd,
       crossSubDomainCookies: { enabled: true, domain: env.ROOT_DOMAIN },
-      // TODO(deploy): set ipAddress.ipAddressHeaders / trustedProxies for the production proxy so
-      // rate limits key on the real client IP (X-Forwarded-For can be spoofed by clients).
+      // Rate limits key on the IP that bootstrap.ts derives from the connection (see TRUST_PROXY).
+      ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
       // Better Auth generates ids for its own tables; app tables use Postgres uuid v7 defaults.
     },
   });

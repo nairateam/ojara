@@ -1,10 +1,11 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
+import { WORKER_OPTIONS } from '../common/queue/worker-options.js';
 import { PrismaService } from '../database/prisma.service.js';
 import { PAYMENTS_QUEUE, type PaymentWebhookJob } from './payments.service.js';
 
-@Processor(PAYMENTS_QUEUE)
+@Processor(PAYMENTS_QUEUE, WORKER_OPTIONS)
 export class PaymentsProcessor extends WorkerHost {
   private readonly logger = new Logger(PaymentsProcessor.name);
 

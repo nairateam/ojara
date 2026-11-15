@@ -33,3 +33,14 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ ...valid, NODE_ENV: 'production' })).toThrow(/RESEND_API_KEY/);
   });
 });
+
+describe('TRUST_PROXY', () => {
+  it('parses booleans, hop counts and address lists', () => {
+    expect(loadEnv(valid).TRUST_PROXY).toBe(false);
+    expect(loadEnv({ ...valid, TRUST_PROXY: 'true' }).TRUST_PROXY).toBe(true);
+    expect(loadEnv({ ...valid, TRUST_PROXY: '1' }).TRUST_PROXY).toBe(1);
+    expect(loadEnv({ ...valid, TRUST_PROXY: 'loopback, 10.0.0.0/8' }).TRUST_PROXY).toBe(
+      'loopback, 10.0.0.0/8',
+    );
+  });
+});

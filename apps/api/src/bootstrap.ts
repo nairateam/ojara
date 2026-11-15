@@ -2,9 +2,10 @@ import { StandardSchemaValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { toNodeHandler } from 'better-auth/node';
+import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
-import { AUTH_BASE_PATH } from './auth/auth.factory.js';
+import { AUTH_BASE_PATH, CLIENT_IP_HEADER } from './auth/auth.factory.js';
 import { AuthService } from './auth/auth.service.js';
 import { AppConfigService } from './config/app-config.service.js';
 
@@ -25,10 +26,21 @@ export function configureApp(app: NestExpressApplication): void {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
+  const express = app.getHttpAdapter().getInstance();
+
+  // Client IP for rate limiting. Express derives req.ip from the socket, honouring X-Forwarded-For
+  // only from proxies listed in TRUST_PROXY. We then overwrite CLIENT_IP_HEADER with that value,
+  // so a client can never choose its own rate-limit bucket by sending the header itself.
+  express.set('trust proxy', config.env.TRUST_PROXY);
+  express.use((req: Request, _res: Response, next: NextFunction) => {
+    req.headers[CLIENT_IP_HEADER] = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+    next();
+  });
+
   // Better Auth parses its own bodies, so its handler is mounted on Express *before* Nest's body
   // parsers (which Nest registers during init, after this point).
   const auth = app.get(AuthService).auth;
-  app.getHttpAdapter().getInstance().all(`${AUTH_BASE_PATH}/*splat`, toNodeHandler(auth));
+  express.all(`${AUTH_BASE_PATH}/*splat`, toNodeHandler(auth));
 
   app.setGlobalPrefix(API_PREFIX);
   app.useGlobalPipes(new StandardSchemaValidationPipe());
