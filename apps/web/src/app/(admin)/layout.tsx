@@ -41,7 +41,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </span>
           }
         />
-        <main className="flex flex-1 flex-col gap-5 px-4 py-7 md:px-8">{children}</main>
+        <main className="flex flex-1 flex-col">{children}</main>
       </div>
     </div>
   );

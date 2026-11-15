@@ -1,3 +1,4 @@
+import { PageContainer } from '@/components/app/page-container';
 import { Inbox } from 'lucide-react';
 import type { Metadata } from 'next';
 import { EmptyState } from '@/components/app/empty-state';
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: 'Overview' };
 /** 06.01 Overview — SHELL ONLY. */
 export default function AdminOverview() {
   return (
-    <>
+    <PageContainer>
       <PageHeader title="Overview" subtitle="Platform health at a glance." />
       <KpiStrip
         compact
@@ -25,6 +26,6 @@ export default function AdminOverview() {
         title="Nothing needs a person yet"
         body="Abuse reports, failed renewals and support tickets will queue here once those features are live."
       />
-    </>
+    </PageContainer>
   );
 }

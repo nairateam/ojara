@@ -37,9 +37,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           account={{ name: 'Store Owner', role: 'Owner' }}
           leading={<StoreSwitcher store={PLACEHOLDER_STORE} compact />}
         />
-        <main className="flex flex-1 flex-col gap-5 px-4 pt-[18px] pb-28 md:px-8 md:pt-7 lg:pb-8">
-          {children}
-        </main>
+        <main className="flex flex-1 flex-col pb-24 lg:pb-0">{children}</main>
       </div>
       <MobileTabBar />
     </div>

@@ -1,3 +1,4 @@
+import { PageContainer } from '@/components/app/page-container';
 import { Calendar, Plus, Share2, ShoppingBag } from 'lucide-react';
 import type { Metadata } from 'next';
 import { EmptyState } from '@/components/app/empty-state';
@@ -10,7 +11,7 @@ export const metadata: Metadata = { title: 'Home' };
 /** 03.01 Dashboard — SHELL ONLY. Live KPIs, chart and lists arrive with the dashboard feature. */
 export default function DashboardHome() {
   return (
-    <>
+    <PageContainer>
       <PageHeader
         title="Good morning"
         subtitle="Here's what's happening in your store."
@@ -58,6 +59,6 @@ export default function DashboardHome() {
           </Button>
         </Card>
       </div>
-    </>
+    </PageContainer>
   );
 }

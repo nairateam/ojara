@@ -1,3 +1,4 @@
+import { PageContainer } from '@/components/app/page-container';
 import { Hammer } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -27,13 +28,13 @@ export default async function DashboardSection({ params }: Props) {
   const title = titleFor(section);
   if (!title || section.length > 2) notFound();
   return (
-    <>
+    <PageContainer>
       <PageHeader title={title} />
       <EmptyState
         icon={Hammer}
         title={`${title} is on its way`}
         body="This part of your dashboard is being built. The layout, navigation and theming are ready."
       />
-    </>
+    </PageContainer>
   );
 }

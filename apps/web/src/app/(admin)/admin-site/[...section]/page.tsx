@@ -1,3 +1,4 @@
+import { PageContainer } from '@/components/app/page-container';
 import { Hammer } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -17,13 +18,13 @@ export default async function AdminSection({ params }: Props) {
   const title = navTitle(ADMIN_NAV, [], section[0] ?? '');
   if (!title || section.length > 2) notFound();
   return (
-    <>
+    <PageContainer>
       <PageHeader title={title} />
       <EmptyState
         icon={Hammer}
         title={`${title} is on its way`}
         body="This admin tool is not built yet."
       />
-    </>
+    </PageContainer>
   );
 }
