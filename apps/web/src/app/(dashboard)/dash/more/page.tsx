@@ -4,10 +4,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { MERCHANT_NAV, MERCHANT_NAV_FOOTER, type NavItem } from '@/components/app/nav-config';
 import { PageContainer } from '@/components/app/page-container';
+import { SignOutButton } from '@/components/auth/sign-out';
 import { StoreLogoTile } from '@/components/brand/store-logo-tile';
 import { ProgressBar } from '@/components/ui/feedback';
-import { clientEnv } from '@/env';
-import { MOCK_MERCHANT } from '@/mock/dashboard';
+import { requireMerchant } from '@/lib/auth/guards';
 
 export const metadata: Metadata = { title: 'More' };
 
@@ -38,8 +38,9 @@ function LinkGroup({ heading, items }: { heading?: string; items: NavItem[] }) {
 }
 
 /** Mobile "More" tab (04.xx): the sidebar destinations that aren't in the tab bar. */
-export default function MorePage() {
-  const plan = PLANS[MOCK_MERCHANT.plan];
+export default async function MorePage() {
+  const { summary, storeAddress, storeUrl } = await requireMerchant();
+  const plan = PLANS[summary.plan];
   const groups = MERCHANT_NAV.map((g) => ({
     heading: g.heading,
     items: g.items.filter((i) => !IN_TABS.has(i.href)),
@@ -49,15 +50,13 @@ export default function MorePage() {
     <PageContainer className="max-w-[640px] gap-[18px]">
       <section className="flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-4">
         <div className="flex items-center gap-3">
-          <StoreLogoTile name={MOCK_MERCHANT.storeName} size={44} />
+          <StoreLogoTile name={summary.store.name} size={44} />
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-[15px]/[21px] font-semibold">
-              {MOCK_MERCHANT.storeName}
-            </span>
-            <span className="truncate text-xs text-fg-muted">{MOCK_MERCHANT.address}</span>
+            <span className="truncate text-[15px]/[21px] font-semibold">{summary.store.name}</span>
+            <span className="truncate text-xs text-fg-muted">{storeAddress}</span>
           </span>
           <a
-            href={`http://${MOCK_MERCHANT.slug}.${clientEnv.NEXT_PUBLIC_ROOT_DOMAIN}`}
+            href={storeUrl}
             target="_blank"
             rel="noreferrer"
             aria-label="View store"
@@ -70,16 +69,17 @@ export default function MorePage() {
           <span className="flex justify-between text-xs">
             <span className="font-semibold">{plan.name} plan</span>
             <span className="text-fg-muted">
-              {MOCK_MERCHANT.productCount} / {plan.limits.maxProducts} products
+              {summary.productCount} / {plan.limits.maxProducts} products
             </span>
           </span>
-          <ProgressBar value={MOCK_MERCHANT.productCount} max={plan.limits.maxProducts} />
+          <ProgressBar value={summary.productCount} max={plan.limits.maxProducts} />
         </div>
       </section>
       {groups.map((g, i) => (
         <LinkGroup key={g.heading ?? i} heading={g.heading} items={g.items} />
       ))}
       <LinkGroup heading="Account" items={MERCHANT_NAV_FOOTER} />
+      <SignOutButton className="flex items-center justify-center gap-2 rounded-[14px] border border-line bg-surface px-4 py-3.5 text-sm font-semibold text-danger disabled:opacity-60" />
     </PageContainer>
   );
 }

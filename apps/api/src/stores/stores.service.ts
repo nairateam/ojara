@@ -5,6 +5,7 @@ import {
   isReservedSlug,
   type StoreDto,
   type StoreMembershipDto,
+  type StoreSummaryDto,
 } from '@ojara/shared';
 import { PrismaService } from '../database/prisma.service.js';
 import { Prisma } from '../generated/prisma/client.js';
@@ -106,5 +107,31 @@ export class StoresService {
     });
     if (!store) throw new NotFoundException();
     return toDto(store);
+  }
+
+  /**
+   * Shell data for the dashboard: plan, product usage and paid orders awaiting fulfilment.
+   * Must be called inside a tenant context (StoreAccessGuard); RLS scopes every count.
+   */
+  async getSummary(storeId: string): Promise<StoreSummaryDto> {
+    // One transaction for all three reads: each extended-client query opens its own transaction
+    // (to apply the tenant setting), and three at once can time out waiting for a connection.
+    const { store, productCount, openOrders } = await this.prisma.tenantTransaction(async (tx) => ({
+      store: await tx.store.findUnique({
+        where: { id: storeId },
+        select: { ...storeSelect, plan: { select: { key: true } } },
+      }),
+      productCount: await tx.product.count({ where: { storeId, archivedAt: null } }),
+      openOrders: await tx.order.count({
+        where: {
+          storeId,
+          paymentStatus: 'PAID',
+          fulfilmentStatus: { in: ['PENDING', 'PROCESSING', 'READY_FOR_DISPATCH'] },
+        },
+      }),
+    }));
+    if (!store) throw new NotFoundException();
+    const { plan, ...row } = store;
+    return { store: toDto(row), plan: plan.key, productCount, openOrders };
   }
 }

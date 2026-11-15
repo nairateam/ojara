@@ -1,5 +1,6 @@
 import { Bell, ExternalLink, Search } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { AccountMenu } from '@/components/auth/sign-out';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -18,7 +19,7 @@ export function TopBar({
 }: {
   searchPlaceholder: string;
   viewStoreHref?: string;
-  account: { name: string; role: string };
+  account: { name: string; role: string; settingsHref?: string };
   hasUnread?: boolean;
   /** Mobile-only leading slot (e.g. store switcher) shown below lg. */
   leading?: ReactNode;
@@ -83,15 +84,12 @@ export function TopBar({
             ) : null}
           </Button>
         )}
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-[34px] items-center justify-center rounded-full bg-surface-muted text-ui font-semibold">
-            {initials}
-          </span>
-          <span className="hidden flex-col leading-tight md:flex">
-            <span className="text-ui font-semibold">{account.name}</span>
-            <span className="text-xs text-fg-muted">{account.role}</span>
-          </span>
-        </div>
+        <AccountMenu
+          name={account.name}
+          role={account.role}
+          initials={initials}
+          settingsHref={account.settingsHref}
+        />
       </div>
     </header>
   );

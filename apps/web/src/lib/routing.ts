@@ -49,3 +49,49 @@ export function routeForHost(
 export function internalPath(prefix: string, pathname: string): string {
   return pathname === '/' ? prefix : `${prefix}${pathname}`;
 }
+
+/** Request header carrying the visitor's original path + query (for "return to" after login). */
+export const REQUEST_PATH_HEADER = 'x-ojara-path';
+
+/** Better Auth session cookie (`cookiePrefix: 'ojara'`); `__Secure-` variant on HTTPS. */
+export const SESSION_COOKIE_NAMES = ['ojara.session_token', '__Secure-ojara.session_token'];
+
+/** Paths on each signed-in surface that work without a session. */
+const PUBLIC_PATHS: Record<string, readonly string[]> = {
+  [ROUTE_PREFIX.dashboard]: ['/login', '/signup', '/reset-password'],
+  [ROUTE_PREFIX.admin]: ['/login'],
+};
+
+/**
+ * Only same-site relative paths are accepted as a post-login destination ("/orders?x=1"), never
+ * "//evil.com", "/\evil.com" or absolute URLs.
+ */
+export function safeReturnPath(value: string | null | undefined): string | undefined {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) {
+    return undefined;
+  }
+  return value;
+}
+
+/** Login URL that returns the visitor to `returnTo` afterwards. */
+export function loginPath(returnTo: string | null | undefined): string {
+  const next = safeReturnPath(returnTo);
+  return next && next !== '/' ? `/login?next=${encodeURIComponent(next)}` : '/login';
+}
+
+/**
+ * Optimistic gate run by the proxy: a signed-in surface without any session cookie goes straight
+ * to /login. Cookie presence is not proof of a session — layouts verify it with the API, and the
+ * API enforces it on every call. Returns the redirect path, or null to continue.
+ */
+export function signedOutRedirect(
+  prefix: string,
+  pathname: string,
+  search: string,
+  hasSessionCookie: boolean,
+): string | null {
+  const publicPaths = PUBLIC_PATHS[prefix];
+  if (!publicPaths || hasSessionCookie) return null;
+  const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  return isPublic ? null : loginPath(`${pathname}${search}`);
+}

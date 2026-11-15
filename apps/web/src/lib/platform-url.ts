@@ -23,3 +23,10 @@ export async function platformOrigin(surface: Surface): Promise<string> {
       : `${surface === 'dashboard' ? PLATFORM_SUBDOMAINS.app : PLATFORM_SUBDOMAINS.admin}.${root}`;
   return `${proto}://${hostname}${port ? `:${port}` : ''}`;
 }
+
+/** Absolute origin of a store's Ojara sub-domain (e.g. http://demo.ojara.localhost:3001). */
+export async function storefrontOrigin(slug: string): Promise<string> {
+  const marketing = new URL(await platformOrigin('marketing'));
+  marketing.hostname = `${slug}.${marketing.hostname}`;
+  return marketing.origin;
+}

@@ -22,7 +22,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { MOCK_MERCHANT, PRODUCT_TABS, PRODUCTS } from '@/mock/dashboard';
+import { requireMerchant } from '@/lib/auth/guards';
+import { PRODUCT_TABS, PRODUCTS } from '@/mock/dashboard';
 
 export const metadata: Metadata = { title: 'Products' };
 
@@ -38,8 +39,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   const tab =
     PRODUCT_TABS.find((t) => t.key === param(sp.status)?.toUpperCase()) ?? PRODUCT_TABS[0];
   const q = param(sp.q)?.trim().toLowerCase();
-  const limit = PLANS[MOCK_MERCHANT.plan].limits.maxProducts;
-  const used = MOCK_MERCHANT.productCount;
+  const { summary } = await requireMerchant();
+  const limit = PLANS[summary.plan].limits.maxProducts;
+  const used = summary.productCount;
   const atCap = used >= limit;
 
   const products = PRODUCTS.filter(
@@ -70,7 +72,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
 
       {atCap ? (
         <PlanLimitCard limit={limit} />
-      ) : MOCK_MERCHANT.plan === 'FREE' ? (
+      ) : summary.plan === 'FREE' ? (
         <PlanUsageBanner used={used} limit={limit} />
       ) : null}
 

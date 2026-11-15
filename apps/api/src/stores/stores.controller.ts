@@ -5,6 +5,7 @@ import {
   createStoreSchema,
   storeMembershipSchema,
   storeSchema,
+  storeSummarySchema,
 } from '@ojara/shared';
 import { z } from 'zod';
 import type { AuthUser } from '../auth/auth.types.js';
@@ -35,5 +36,12 @@ export class StoresController {
   @UseGuards(StoreAccessGuard)
   async get(@Param('storeId') storeId: string) {
     return storeSchema.parse(await this.stores.getCurrent(storeId));
+  }
+
+  /** Dashboard shell data: plan, product usage, open orders. */
+  @Get(':storeId/summary')
+  @UseGuards(StoreAccessGuard)
+  async summary(@Param('storeId') storeId: string) {
+    return storeSummarySchema.parse(await this.stores.getSummary(storeId));
   }
 }

@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { DEFAULT_COUNTRY, DEFAULT_CURRENCY } from '../constants/currency.js';
 import { isReservedSlug, STORE_SLUG_PATTERN } from '../constants/domains.js';
 import { MEDIA_KINDS } from '../constants/media.js';
-import { STORE_ROLES, STORE_STATUSES } from '../constants/statuses.js';
+import { PLAN_KEYS } from '../constants/plans.js';
+import { PLATFORM_ROLES, STORE_ROLES, STORE_STATUSES } from '../constants/statuses.js';
 
 /** Consistent error body returned by the API's global exception filter. */
 export const apiErrorSchema = z.object({
@@ -51,6 +52,29 @@ export type StoreDto = z.infer<typeof storeSchema>;
 
 export const storeMembershipSchema = storeSchema.extend({ role: z.enum(STORE_ROLES) });
 export type StoreMembershipDto = z.infer<typeof storeMembershipSchema>;
+
+/** Dashboard shell data for one store: GET /v1/stores/:storeId/summary. */
+export const storeSummarySchema = z.object({
+  store: storeSchema,
+  plan: z.enum(PLAN_KEYS),
+  /** Products that count towards the plan limit (not archived). */
+  productCount: z.number().int().nonnegative(),
+  /** Paid orders still waiting to be fulfilled (sidebar / tab bar count pill). */
+  openOrders: z.number().int().nonnegative(),
+});
+export type StoreSummaryDto = z.infer<typeof storeSummarySchema>;
+
+/** The signed-in user as returned by GET /v1/session. */
+export const sessionUserSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  name: z.string(),
+  emailVerified: z.boolean(),
+  role: z.enum(PLATFORM_ROLES),
+  twoFactorEnabled: z.boolean(),
+});
+export type SessionUserDto = z.infer<typeof sessionUserSchema>;
+export const sessionResponseSchema = z.object({ user: sessionUserSchema });
 
 export const resolveTenantQuerySchema = z.object({
   host: z.string().trim().min(1).max(253),

@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageContainer } from '@/components/app/page-container';
 import { PageHeader } from '@/components/app/page-header';
-import { formatCompactKobo } from '@/components/dashboard/format';
+import { formatCompactKobo, timeOfDayGreeting, todayLabel } from '@/components/dashboard/format';
 import {
   BestSellersCard,
   DailySalesCard,
@@ -15,22 +15,16 @@ import {
 } from '@/components/dashboard/home-cards';
 import { type DashKpi, KpiGridCard, KpiStripCard } from '@/components/dashboard/kpis';
 import { Button } from '@/components/ui/button';
-import { clientEnv } from '@/env';
-import {
-  BEST_SELLERS,
-  DAILY_SALES,
-  HOME_KPIS,
-  MOCK_MERCHANT,
-  NEEDS_ATTENTION,
-  ORDERS,
-} from '@/mock/dashboard';
+import { firstName as getFirstName, requireMerchant } from '@/lib/auth/guards';
+import { BEST_SELLERS, DAILY_SALES, HOME_KPIS, NEEDS_ATTENTION, ORDERS } from '@/mock/dashboard';
 
 export const metadata: Metadata = { title: 'Home' };
 
 /** 03.01 Dashboard (desktop) and 04.01 Home (mobile). */
-export default function DashboardHome() {
-  const { firstName } = MOCK_MERCHANT.owner;
-  const storeUrl = `http://${MOCK_MERCHANT.slug}.${clientEnv.NEXT_PUBLIC_ROOT_DOMAIN}`;
+export default async function DashboardHome() {
+  const { user, summary, storeAddress, storeUrl } = await requireMerchant();
+  const firstName = getFirstName(user.name);
+  const greeting = timeOfDayGreeting();
   const k = HOME_KPIS;
 
   const kpis: DashKpi[] = [
@@ -72,7 +66,7 @@ export default function DashboardHome() {
       <div className="flex items-center justify-between gap-3 lg:hidden">
         <div className="flex flex-col gap-0.5">
           <h1 className="font-display text-[22px] font-semibold tracking-[-0.4px]">
-            Good morning, {firstName}
+            {greeting}, {firstName}
           </h1>
           <p className="text-[13px]/[19px] text-fg-muted">Last 30 days</p>
         </div>
@@ -87,8 +81,8 @@ export default function DashboardHome() {
 
       <PageHeader
         className="hidden lg:flex"
-        title={`Good morning, ${firstName}`}
-        subtitle={`${MOCK_MERCHANT.todayLabel} · Here’s how ${MOCK_MERCHANT.storeName} is doing`}
+        title={`${greeting}, ${firstName}`}
+        subtitle={`${todayLabel()} · Here’s how ${summary.store.name} is doing`}
         actions={
           <>
             <Button variant="secondary">
@@ -108,7 +102,7 @@ export default function DashboardHome() {
 
       <div className="flex flex-col gap-[18px] lg:hidden">
         <NeedsAttentionCard items={NEEDS_ATTENTION} compact />
-        <ShareStoreStrip address={MOCK_MERCHANT.address} url={storeUrl} />
+        <ShareStoreStrip address={storeAddress} url={storeUrl} />
       </div>
 
       <div className="hidden gap-6 lg:grid xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -119,7 +113,7 @@ export default function DashboardHome() {
         <div className="grid content-start gap-6 md:grid-cols-2 xl:grid-cols-1">
           <NeedsAttentionCard items={NEEDS_ATTENTION} />
           <BestSellersCard items={BEST_SELLERS} />
-          <ShareStoreCard address={MOCK_MERCHANT.address} url={storeUrl} />
+          <ShareStoreCard address={storeAddress} url={storeUrl} />
         </div>
       </div>
     </PageContainer>

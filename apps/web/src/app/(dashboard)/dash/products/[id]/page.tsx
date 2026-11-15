@@ -14,10 +14,10 @@ import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { Field, RadioCard, Select, Textarea } from '@/components/ui/form-controls';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { requireMerchant } from '@/lib/auth/guards';
 import { cn } from '@/lib/utils';
 import {
   COLOUR_SWATCHES,
-  MOCK_MERCHANT,
   type MockProductDetail,
   PRODUCT_CATEGORIES,
   productDetail,
@@ -96,8 +96,9 @@ export default async function EditProductPage({ params }: Props) {
   const product = isNew ? NEW_PRODUCT : productDetail(id);
   if (!product) notFound();
 
-  const limit = PLANS[MOCK_MERCHANT.plan].limits.maxProducts;
-  if (isNew && MOCK_MERCHANT.productCount >= limit) {
+  const { summary, storeAddress } = await requireMerchant();
+  const limit = PLANS[summary.plan].limits.maxProducts;
+  if (isNew && summary.productCount >= limit) {
     return (
       <PageContainer>
         <PageHeader back={{ href: '/products', label: 'Products' }} title="Add product" />
@@ -352,7 +353,7 @@ export default async function EditProductPage({ params }: Props) {
                 defaultChecked={product.status === 'PUBLISHED'}
               >
                 <span className="text-[13px]/[19px] font-semibold">Published</span>
-                <span className="text-xs text-fg-muted">Visible on {MOCK_MERCHANT.address}</span>
+                <span className="text-xs text-fg-muted">Visible on {storeAddress}</span>
               </RadioCard>
               <RadioCard
                 name="status"
@@ -463,7 +464,7 @@ export default async function EditProductPage({ params }: Props) {
             </div>
             <div className="flex flex-col gap-2 rounded-md border border-line bg-store-page p-3.5 text-store-ink">
               <div className="flex items-center justify-between">
-                <span className="font-display text-xs font-bold">{MOCK_MERCHANT.storeName}</span>
+                <span className="font-display text-xs font-bold">{summary.store.name}</span>
                 <ShoppingBag className="size-3.5" aria-hidden />
               </div>
               {preview ? (

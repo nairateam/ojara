@@ -7,9 +7,16 @@ import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AUTH_BASE_PATH, CLIENT_IP_HEADER } from './auth/auth.factory.js';
 import { AuthService } from './auth/auth.service.js';
+import {
+  hasValidInternalToken,
+  INTERNAL_TOKEN_HEADER,
+} from './auth/guards/internal-token.guard.js';
 import { AppConfigService } from './config/app-config.service.js';
 
 export const API_PREFIX = 'v1';
+
+/** Browser IP relayed by the web app's server; trusted only with a valid internal token. */
+export const FORWARDED_CLIENT_IP_HEADER = 'x-ojara-forwarded-for';
 
 /**
  * Applies global HTTP configuration. Shared by main.ts and e2e tests so they behave identically.
@@ -31,9 +38,19 @@ export function configureApp(app: NestExpressApplication): void {
   // Client IP for rate limiting. Express derives req.ip from the socket, honouring X-Forwarded-For
   // only from proxies listed in TRUST_PROXY. We then overwrite CLIENT_IP_HEADER with that value,
   // so a client can never choose its own rate-limit bucket by sending the header itself.
+  // Exception: the web app's server (Server Components) calls on behalf of a browser and passes
+  // that browser's IP in FORWARDED_CLIENT_IP_HEADER; it is honoured only alongside the internal
+  // token, otherwise every SSR request would share the web server's bucket.
   express.set('trust proxy', config.env.TRUST_PROXY);
   express.use((req: Request, _res: Response, next: NextFunction) => {
-    req.headers[CLIENT_IP_HEADER] = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+    const forwarded = req.header(FORWARDED_CLIENT_IP_HEADER);
+    const trusted =
+      forwarded !== undefined &&
+      hasValidInternalToken(req.header(INTERNAL_TOKEN_HEADER), config.env.INTERNAL_API_TOKEN);
+    req.headers[CLIENT_IP_HEADER] = trusted
+      ? forwarded.slice(0, 64)
+      : (req.ip ?? req.socket.remoteAddress ?? 'unknown');
+    delete req.headers[FORWARDED_CLIENT_IP_HEADER];
     next();
   });
 

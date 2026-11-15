@@ -1,7 +1,15 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { clientEnv, serverEnv } from '@/env';
 import { resolveTenant } from '@/lib/api/server';
-import { internalPath, ROUTE_PREFIX, routeForHost, TENANT_HEADER } from '@/lib/routing';
+import {
+  internalPath,
+  REQUEST_PATH_HEADER,
+  ROUTE_PREFIX,
+  routeForHost,
+  SESSION_COOKIE_NAMES,
+  signedOutRedirect,
+  TENANT_HEADER,
+} from '@/lib/routing';
 import { TenantCache } from '@/lib/tenant-cache';
 
 /**
@@ -31,7 +39,15 @@ export async function proxy(request: NextRequest) {
   };
 
   if (target.kind === 'not-found') return rewriteTo(ROUTE_PREFIX.notFound);
-  if (target.kind === 'platform') return rewriteTo(internalPath(target.prefix, pathname));
+  if (target.kind === 'platform') {
+    const hasSession = SESSION_COOKIE_NAMES.some((name) => request.cookies.has(name));
+    const loginRedirect = signedOutRedirect(target.prefix, pathname, search, hasSession);
+    if (loginRedirect) return NextResponse.redirect(new URL(loginRedirect, request.nextUrl));
+    // Layouts can't see the URL; pass it along for "return to this page after login".
+    const headers = new Headers(request.headers);
+    headers.set(REQUEST_PATH_HEADER, `${pathname}${search}`);
+    return rewriteTo(internalPath(target.prefix, pathname), headers);
+  }
 
   let tenant = tenantCache.get(target.hostname);
   if (tenant === undefined) {

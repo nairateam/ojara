@@ -3,13 +3,14 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { AdminModule } from './admin/admin.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { BillingModule } from './billing/billing.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
+import { ClientIpThrottlerGuard } from './common/throttler/client-ip-throttler.guard.js';
 import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storage.js';
 import { AppConfigService } from './config/app-config.service.js';
 import { ConfigModule } from './config/config.module.js';
@@ -99,7 +100,7 @@ import { UsersModule } from './users/users.module.js';
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
     // Order matters: throttle first, then SessionGuard/RolesGuard (registered in AuthModule).
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: ClientIpThrottlerGuard },
   ],
 })
 export class AppModule {}

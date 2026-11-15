@@ -20,14 +20,9 @@ import {
   TablePagination,
   TableRow,
 } from '@/components/ui/table';
+import { requireMerchant } from '@/lib/auth/guards';
 import { cn } from '@/lib/utils';
-import {
-  MOCK_MERCHANT,
-  type MockOrder,
-  ORDER_STATUS_COUNTS,
-  ORDERS,
-  findOrder,
-} from '@/mock/dashboard';
+import { type MockOrder, ORDER_STATUS_COUNTS, ORDERS, findOrder } from '@/mock/dashboard';
 
 export const metadata: Metadata = { title: 'Orders' };
 
@@ -90,6 +85,7 @@ function OrderCard({ order, selected }: { order: MockOrder; selected: boolean })
 
 /** 03.03 Orders (desktop: tabs, filters, table + right detail panel) and 04.02 (mobile cards). */
 export default async function OrdersPage({ searchParams }: { searchParams: SearchParams }) {
+  const { summary } = await requireMerchant();
   const sp = await searchParams;
   const statusParam = param(sp.status)?.toUpperCase();
   const status = FULFILMENT_STATUSES.find((s) => s === statusParam);
@@ -166,7 +162,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
       <PageHeader
         className="hidden lg:flex"
         title="Orders"
-        subtitle={`86 orders in the last 30 days · ${MOCK_MERCHANT.openOrders} waiting on you`}
+        subtitle={`86 orders in the last 30 days · ${summary.openOrders} waiting on you`}
         actions={
           <Button variant="secondary">
             <Download /> Export

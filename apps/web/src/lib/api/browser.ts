@@ -117,3 +117,8 @@ export async function continueWithGoogle(): Promise<void> {
   );
   window.location.assign(res.url);
 }
+
+/** Ends the session (Better Auth clears the cookie on *.ROOT_DOMAIN). */
+export async function signOut(): Promise<void> {
+  await authPost('/sign-out', {}, z.unknown());
+}

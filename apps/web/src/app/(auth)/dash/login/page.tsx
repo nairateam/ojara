@@ -1,15 +1,26 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { AuthShell } from '@/components/auth/auth-shell';
 import { LoginForm } from '@/components/auth/login-form';
 import { getAuthOptions } from '@/lib/api/server';
+import { getSessionUser } from '@/lib/api/session';
+import { safeReturnPath } from '@/lib/routing';
 
 export const metadata: Metadata = { title: 'Log in' };
 
-type Props = { searchParams: Promise<{ error?: string; reset?: string }> };
+type Props = { searchParams: Promise<{ error?: string; reset?: string; next?: string }> };
 
 /** 02.01 Log In (email + password, optional Google, then 2FA when enabled). */
 export default async function LoginPage({ searchParams }: Props) {
-  const [{ googleSignIn }, { error, reset }] = await Promise.all([getAuthOptions(), searchParams]);
+  const [{ googleSignIn }, { error, reset, next }, user] = await Promise.all([
+    getAuthOptions(),
+    searchParams,
+    // Already signed in: skip the form. If the API is unreachable, just show the form.
+    getSessionUser().catch(() => null),
+  ]);
+  const redirectTo = safeReturnPath(next) ?? '/';
+  if (user) redirect(redirectTo);
+
   return (
     <AuthShell
       headline="Welcome back to your market."
@@ -22,6 +33,7 @@ export default async function LoginPage({ searchParams }: Props) {
       }
     >
       <LoginForm
+        redirectTo={redirectTo}
         googleSignIn={googleSignIn}
         initialError={error ? 'Google sign-in didn’t complete. Please try again.' : undefined}
       />

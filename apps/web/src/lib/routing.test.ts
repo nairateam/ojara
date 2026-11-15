@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { internalPath, routeForHost } from './routing';
+import {
+  internalPath,
+  loginPath,
+  ROUTE_PREFIX,
+  routeForHost,
+  safeReturnPath,
+  signedOutRedirect,
+} from './routing';
 import { TenantCache } from './tenant-cache';
 
 const ROOT = 'ojara.localhost';
@@ -58,5 +65,55 @@ describe('TenantCache', () => {
     cache.set('c', tenant);
     expect(cache.size).toBe(2);
     expect(cache.get('a')).toBeUndefined();
+  });
+});
+
+describe('safeReturnPath', () => {
+  it.each([
+    ['/orders?status=open', '/orders?status=open'],
+    ['/', '/'],
+    ['//evil.com', undefined],
+    ['/\\evil.com', undefined],
+    ['https://evil.com', undefined],
+    ['orders', undefined],
+    ['', undefined],
+    [null, undefined],
+  ])('%s -> %s', (input, expected) => {
+    expect(safeReturnPath(input)).toBe(expected);
+  });
+
+  it('builds login paths', () => {
+    expect(loginPath('/')).toBe('/login');
+    expect(loginPath('//evil.com')).toBe('/login');
+    expect(loginPath('/orders?x=1')).toBe('/login?next=%2Forders%3Fx%3D1');
+  });
+});
+
+describe('signedOutRedirect', () => {
+  const dash = ROUTE_PREFIX.dashboard;
+  const admin = ROUTE_PREFIX.admin;
+
+  it('sends signed-out visitors on private pages to /login with a return path', () => {
+    expect(signedOutRedirect(dash, '/orders', '?page=2', false)).toBe(
+      '/login?next=%2Forders%3Fpage%3D2',
+    );
+    expect(signedOutRedirect(dash, '/', '', false)).toBe('/login');
+    expect(signedOutRedirect(admin, '/merchants', '', false)).toBe('/login?next=%2Fmerchants');
+  });
+
+  it('lets public auth pages and cookie holders through', () => {
+    expect(signedOutRedirect(dash, '/login', '', false)).toBeNull();
+    expect(signedOutRedirect(dash, '/reset-password/new', '?token=x', false)).toBeNull();
+    expect(signedOutRedirect(dash, '/orders', '', true)).toBeNull();
+    expect(signedOutRedirect(admin, '/login', '', false)).toBeNull();
+    expect(signedOutRedirect(admin, '/signup', '', false)).toBe('/login?next=%2Fsignup');
+  });
+
+  it('never gates marketing', () => {
+    expect(signedOutRedirect(ROUTE_PREFIX.marketing, '/pricing', '', false)).toBeNull();
+  });
+
+  it('does not treat look-alike paths as public', () => {
+    expect(signedOutRedirect(dash, '/login-help', '', false)).toBe('/login?next=%2Flogin-help');
   });
 });

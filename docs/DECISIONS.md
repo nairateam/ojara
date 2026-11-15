@@ -162,7 +162,15 @@ unless noted.
   2FA 5/min) and stores counters in **Postgres**, so limits hold across instances without Redis.
   The client IP comes from the connection (Express `trust proxy` via `TRUST_PROXY`) and is passed
   in a server-set header, so clients can't choose their own bucket. The API-wide limit
-  (120/min) uses Redis with an in-memory fallback.
+  (120/min) uses Redis with an in-memory fallback and is keyed on the same client IP.
+- **Server-rendered calls:** the web server calls the API on a browser's behalf (session, stores),
+  forwarding the browser's cookie and its IP in `x-ojara-forwarded-for`. The API honours that
+  header only alongside a valid `x-internal-token`; otherwise every page load would share the web
+  server's rate-limit bucket. The web server takes the rightmost `X-Forwarded-For` entry. Next.js
+  fills that header from the socket when it is absent but passes a client-supplied one through, so
+  **in production Next must sit behind a proxy/load balancer that sets or appends
+  `X-Forwarded-For`**. Otherwise a visitor can choose their page-load bucket. Auth endpoints
+  are unaffected (browsers call Better Auth directly).
 - **Leaked passwords:** Have I Been Pwned check on sign-up and reset (k-anonymity: only a 5-character
   hash prefix leaves the server). `PASSWORD_BREACH_CHECK=false` disables it offline.
 - **Password reset:** emailed one-time link, 1 hour, revokes all sessions, transactional; the same
@@ -204,6 +212,20 @@ unless noted.
   in-memory TTL cache (60 s; misses 10 s). TODO: move to Redis with invalidation on store changes.
 - Storefront pages are Server Components with minimal client JS (quantity stepper, gallery, active
   nav link only).
+- Signed-in surfaces are gated in three layers:
+  - **`proxy.ts` (optimistic):** sends visitors with no session cookie to `/login?next=…`; only
+    same-site relative paths are accepted as `next`.
+  - **Layouts and pages (verified):** call `requireMerchant()`, `requireAdmin()` or
+    `requireUser()` (`lib/auth/guards.ts`), which check the session with the API. Merchants without
+    a store go to `/onboarding`, admins without two-factor to `/security`, and non-admins on the
+    admin host see "No admin access". Pages call these too, because layouts don't re-run on
+    client-side navigation.
+  - **The API:** the security boundary, it re-checks every call.
+
+  The active store is the `ojara_store` cookie, else the first membership; the switcher that
+  sets it is not built yet. `/security` is in its own route group, outside the admin shell that
+  redirects to it.
+
 - Env validated with Zod at boot in both apps.
 - `cn` is taught the custom font-size tokens; without it, `text-ui`/`text-2xs` etc. were dropped
   next to text colours. The 15 px size token is `text-title` (`text-card` clashed with the card

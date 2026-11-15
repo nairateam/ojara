@@ -19,3 +19,28 @@ export function initials(name: string): string {
     .slice(0, 2)
     .toUpperCase();
 }
+
+/** Merchants and the platform run on Lagos time (WAT), whatever the server's time zone. */
+const LAGOS = 'Africa/Lagos';
+
+/** "Good morning" / "Good afternoon" / "Good evening" for the given moment, in Lagos time. */
+export function timeOfDayGreeting(now: Date = new Date()): string {
+  const hour = Number(
+    new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: LAGOS }).format(
+      now,
+    ),
+  );
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+/** "Saturday, 15 November" in Lagos time. */
+export function todayLabel(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: LAGOS,
+  }).format(now);
+}

@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import { AdminSidebarNav } from '@/components/admin/admin-sidebar';
 import { TopBar } from '@/components/app/top-bar';
 import { Wordmark } from '@/components/brand/wordmark';
-import { ADMIN_ACCOUNT } from '@/mock/admin';
+import { NoAdminAccess } from '@/components/auth/no-admin-access';
+import { requireAdmin } from '@/lib/auth/guards';
 
 export const metadata: Metadata = {
   title: { default: 'Admin', template: '%s · Ojara Admin' },
@@ -14,10 +15,14 @@ export const metadata: Metadata = {
  * Platform admin shell (admin.ROOT_DOMAIN), matching 06.xx: darker 240px sidebar with the
  * wordmark + "ADMIN" tag (no store switcher, no plan card) and a top bar without "View store".
  *
- * TODO(auth): require a PLATFORM_ADMIN session server-side (GET /v1/session) and redirect others
- * to /login. The API already enforces @Roles('PLATFORM_ADMIN') on /v1/admin/*.
+ * Access: GET /v1/admin/session (PLATFORM_ADMIN + two-factor + session under 8 hours). Signed-out
+ * or expired sessions go to /login, admins without two-factor to /security, other accounts see a
+ * "no admin access" message. The API enforces the same rules on every /v1/admin/* call.
  */
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const admin = await requireAdmin();
+  if (!admin) return <NoAdminAccess />;
+
   return (
     <div className="flex min-h-dvh bg-paper">
       <aside className="sticky top-0 hidden h-dvh w-[240px] shrink-0 flex-col gap-6 overflow-y-auto bg-admin-nav px-3.5 py-[22px] lg:flex">
@@ -32,7 +37,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
           searchPlaceholder="Search merchants, stores or domains"
-          account={{ name: ADMIN_ACCOUNT.name, role: ADMIN_ACCOUNT.role }}
+          account={{ name: admin.name, role: 'Platform admin' }}
           hasUnread
           leading={
             <span className="flex items-center gap-2">
