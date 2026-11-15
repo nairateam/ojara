@@ -13,7 +13,10 @@ function Switch({
   size = 'default',
   tone = 'default',
   ...props
-}: React.ComponentProps<typeof SwitchPrimitive.Root> & { size?: 'default' | 'sm'; tone?: 'default' | 'success' }) {
+}: React.ComponentProps<typeof SwitchPrimitive.Root> & {
+  size?: 'default' | 'sm';
+  tone?: 'default' | 'success';
+}) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
@@ -29,7 +32,9 @@ function Switch({
         data-slot="switch-thumb"
         className={cn(
           'pointer-events-none block rounded-full bg-paper transition-transform data-[state=unchecked]:translate-x-0',
-          size === 'sm' ? 'size-3.5 data-[state=checked]:translate-x-3.5' : 'size-4 data-[state=checked]:translate-x-3.5',
+          size === 'sm'
+            ? 'size-3.5 data-[state=checked]:translate-x-3.5'
+            : 'size-4 data-[state=checked]:translate-x-3.5',
         )}
       />
     </SwitchPrimitive.Root>

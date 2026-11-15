@@ -15,8 +15,8 @@ export default async function NotFound() {
       title="We couldn't find that store"
       body={
         <p>
-          The address may be mistyped, or the store may have moved or closed. Check the link the seller
-          shared with you, or start your own store on Ojara.
+          The address may be mistyped, or the store may have moved or closed. Check the link the
+          seller shared with you, or start your own store on Ojara.
         </p>
       }
       action={

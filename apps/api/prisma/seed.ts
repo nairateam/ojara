@@ -21,15 +21,28 @@ function required(name: string): string {
   return value;
 }
 
-const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: required('DATABASE_MIGRATION_URL') }) });
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: required('DATABASE_MIGRATION_URL') }),
+});
 
-async function upsertUserWithPassword(email: string, name: string, password: string, role: 'USER' | 'PLATFORM_ADMIN') {
+async function upsertUserWithPassword(
+  email: string,
+  name: string,
+  password: string,
+  role: 'USER' | 'PLATFORM_ADMIN',
+) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return existing;
   const id = randomUUID();
   const user = await prisma.user.create({ data: { id, email, name, role, emailVerified: true } });
   await prisma.account.create({
-    data: { id: randomUUID(), accountId: id, providerId: 'credential', userId: id, password: await hashPassword(password) },
+    data: {
+      id: randomUUID(),
+      accountId: id,
+      providerId: 'credential',
+      userId: id,
+      password: await hashPassword(password),
+    },
   });
   return user;
 }
@@ -54,7 +67,12 @@ async function main() {
   );
 
   // 3. Demo merchant + store
-  const merchant = await upsertUserWithPassword('demo@ojara.localhost', 'Adunni Okafor', 'Demo-Merchant-123', 'USER');
+  const merchant = await upsertUserWithPassword(
+    'demo@ojara.localhost',
+    'Adunni Okafor',
+    'Demo-Merchant-123',
+    'USER',
+  );
   const free = await prisma.plan.findUniqueOrThrow({ where: { key: 'FREE' } });
 
   const store = await prisma.store.upsert({
@@ -83,7 +101,9 @@ async function main() {
 
   const hasSubscription = await prisma.subscription.findFirst({ where: { storeId: store.id } });
   if (!hasSubscription) {
-    await prisma.subscription.create({ data: { storeId: store.id, planId: free.id, status: 'ACTIVE' } });
+    await prisma.subscription.create({
+      data: { storeId: store.id, planId: free.id, status: 'ACTIVE' },
+    });
   }
 
   const category = await prisma.category.upsert({
@@ -93,9 +113,28 @@ async function main() {
   });
 
   const products = [
-    { slug: 'indigo-adire-shirt', name: 'Indigo Adire Shirt', basePriceKobo: 2_850_000, sku: 'ADT-SHIRT-01', sizes: ['S', 'M', 'L'] },
-    { slug: 'kampala-wrap-dress', name: 'Kampala Wrap Dress', basePriceKobo: 4_200_000, promoPriceKobo: 3_800_000, sku: 'ADT-DRESS-02', sizes: ['M', 'L'] },
-    { slug: 'aso-oke-tote', name: 'Aso-Oke Tote Bag', basePriceKobo: 1_500_000, sku: 'ADT-TOTE-03', sizes: [] },
+    {
+      slug: 'indigo-adire-shirt',
+      name: 'Indigo Adire Shirt',
+      basePriceKobo: 2_850_000,
+      sku: 'ADT-SHIRT-01',
+      sizes: ['S', 'M', 'L'],
+    },
+    {
+      slug: 'kampala-wrap-dress',
+      name: 'Kampala Wrap Dress',
+      basePriceKobo: 4_200_000,
+      promoPriceKobo: 3_800_000,
+      sku: 'ADT-DRESS-02',
+      sizes: ['M', 'L'],
+    },
+    {
+      slug: 'aso-oke-tote',
+      name: 'Aso-Oke Tote Bag',
+      basePriceKobo: 1_500_000,
+      sku: 'ADT-TOTE-03',
+      sizes: [],
+    },
   ];
 
   for (const p of products) {
@@ -120,7 +159,13 @@ async function main() {
       await prisma.productVariant.upsert({
         where: { storeId_sku: { storeId: store.id, sku } },
         update: {},
-        create: { storeId: store.id, productId: product.id, sku, options: size ? { size } : {}, stockQuantity: 12 },
+        create: {
+          storeId: store.id,
+          productId: product.id,
+          sku,
+          options: size ? { size } : {},
+          stockQuantity: 12,
+        },
       });
     }
   }
@@ -129,15 +174,29 @@ async function main() {
   if (!hasZone) {
     await prisma.deliveryZone.createMany({
       data: [
-        { storeId: store.id, name: 'Lagos Island', feeKobo: 250_000, areas: ['Lekki', 'Ajah', 'Victoria Island', 'Ikoyi'] },
-        { storeId: store.id, name: 'Lagos Mainland', feeKobo: 300_000, areas: ['Yaba', 'Surulere', 'Ikeja'] },
+        {
+          storeId: store.id,
+          name: 'Lagos Island',
+          feeKobo: 250_000,
+          areas: ['Lekki', 'Ajah', 'Victoria Island', 'Ikoyi'],
+        },
+        {
+          storeId: store.id,
+          name: 'Lagos Mainland',
+          feeKobo: 300_000,
+          areas: ['Yaba', 'Surulere', 'Ikeja'],
+        },
       ],
     });
   }
 
-  await prisma.auditLog.create({ data: { action: 'seed.completed', entity: 'System', actorId: admin.id } });
+  await prisma.auditLog.create({
+    data: { action: 'seed.completed', entity: 'System', actorId: admin.id },
+  });
 
-  console.log(`Seeded plans, admin <${admin.email}>, and store "${store.name}" at demo.<ROOT_DOMAIN>`);
+  console.log(
+    `Seeded plans, admin <${admin.email}>, and store "${store.name}" at demo.<ROOT_DOMAIN>`,
+  );
   console.log('Demo merchant login: demo@ojara.localhost / Demo-Merchant-123 (local only)');
 }
 

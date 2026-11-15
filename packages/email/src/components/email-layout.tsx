@@ -13,7 +13,9 @@ export function EmailLayout({ preview, children }: EmailLayoutProps) {
     <Html lang="en">
       <Head />
       <Preview>{preview}</Preview>
-      <Body style={{ backgroundColor: t.paper, fontFamily: t.fontBody, margin: 0, padding: '32px 0' }}>
+      <Body
+        style={{ backgroundColor: t.paper, fontFamily: t.fontBody, margin: 0, padding: '32px 0' }}
+      >
         <Container style={{ maxWidth: 560, margin: '0 auto', padding: '0 16px' }}>
           <Text
             style={{

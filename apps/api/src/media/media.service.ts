@@ -53,7 +53,8 @@ export class MediaService {
       const sig = this.images.createUploadSignature({ storeId, kind: req.kind });
       return { ...sig, maxFileSize: limits.maxImageBytes };
     } catch (err) {
-      if (err instanceof MediaNotConfiguredError) throw new ServiceUnavailableException(err.message);
+      if (err instanceof MediaNotConfiguredError)
+        throw new ServiceUnavailableException(err.message);
       throw err;
     }
   }

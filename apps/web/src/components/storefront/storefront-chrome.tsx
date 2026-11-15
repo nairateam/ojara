@@ -13,7 +13,13 @@ const NAV = [
  * Fraunces name), centred nav, and search / WhatsApp / cart. Mobile collapses to menu · brand · cart.
  * Category links come from the merchant's categories once the catalogue feature exists.
  */
-export function StorefrontHeader({ storeName, cartCount = 0 }: { storeName: string; cartCount?: number }) {
+export function StorefrontHeader({
+  storeName,
+  cartCount = 0,
+}: {
+  storeName: string;
+  cartCount?: number;
+}) {
   return (
     <>
       <div className="flex items-center justify-center gap-2 bg-store-primary px-3 py-[7px] text-2xs font-medium text-store-primary-fg md:py-[9px] md:text-xs">
@@ -27,11 +33,17 @@ export function StorefrontHeader({ storeName, cartCount = 0 }: { storeName: stri
         <Link href="/" className="flex items-center justify-center gap-2.5 md:justify-start">
           <StoreLogoTile name={storeName} size={36} className="hidden md:inline-flex" />
           <StoreLogoTile name={storeName} size={26} className="md:hidden" />
-          <span className="font-serif text-[17px] font-semibold text-store-ink md:text-[22px]">{storeName}</span>
+          <span className="font-serif text-[17px] font-semibold text-store-ink md:text-[22px]">
+            {storeName}
+          </span>
         </Link>
         <nav className="hidden justify-center gap-8 md:flex" aria-label="Shop">
           {NAV.map((l) => (
-            <Link key={l.href} href={l.href} className="text-sm font-medium text-store-ink hover:text-store-primary">
+            <Link
+              key={l.href}
+              href={l.href}
+              className="text-sm font-medium text-store-ink hover:text-store-primary"
+            >
               {l.label}
             </Link>
           ))}
@@ -39,7 +51,12 @@ export function StorefrontHeader({ storeName, cartCount = 0 }: { storeName: stri
         <div className="flex items-center justify-end gap-[18px] text-store-ink">
           <label className="hidden w-[170px] items-center gap-2 rounded-pill border border-store-border bg-store-card px-3 py-2 lg:flex">
             <Search className="size-[15px] text-store-muted" aria-hidden />
-            <input type="search" placeholder="Search" aria-label="Search products" className="min-w-0 flex-1 bg-transparent text-ui outline-none placeholder:text-store-muted" />
+            <input
+              type="search"
+              placeholder="Search"
+              aria-label="Search products"
+              className="min-w-0 flex-1 bg-transparent text-ui outline-none placeholder:text-store-muted"
+            />
           </label>
           <Search className="size-5 lg:hidden" aria-hidden />
           <MessageCircle className="hidden size-5 md:block" aria-label="WhatsApp" />
@@ -56,7 +73,13 @@ export function StorefrontHeader({ storeName, cartCount = 0 }: { storeName: stri
 }
 
 /** Storefront footer (05.01): ink background, about + Shop/Help columns, "Powered by ojara". */
-export function StorefrontFooter({ storeName, showPoweredBy }: { storeName: string; showPoweredBy: boolean }) {
+export function StorefrontFooter({
+  storeName,
+  showPoweredBy,
+}: {
+  storeName: string;
+  showPoweredBy: boolean;
+}) {
   return (
     <footer className="flex flex-col gap-10 bg-store-ink px-4 pt-14 pb-7 md:px-16">
       <div className="flex flex-col gap-10 md:flex-row md:gap-12">
@@ -67,13 +90,21 @@ export function StorefrontFooter({ storeName, showPoweredBy }: { storeName: stri
         <div className="flex-1" />
         <div className="flex min-w-[180px] flex-col gap-2.5 text-ui">
           <span className="font-semibold text-white">Shop</span>
-          <Link href="/products" className="text-store-footer-fg">Shop all</Link>
+          <Link href="/products" className="text-store-footer-fg">
+            Shop all
+          </Link>
         </div>
         <div className="flex min-w-[180px] flex-col gap-2.5 text-ui">
           <span className="font-semibold text-white">Help</span>
-          <Link href="/delivery" className="text-store-footer-fg">Delivery &amp; pickup</Link>
-          <Link href="/returns" className="text-store-footer-fg">Returns &amp; exchanges</Link>
-          <Link href="/track" className="text-store-footer-fg">Track an order</Link>
+          <Link href="/delivery" className="text-store-footer-fg">
+            Delivery &amp; pickup
+          </Link>
+          <Link href="/returns" className="text-store-footer-fg">
+            Returns &amp; exchanges
+          </Link>
+          <Link href="/track" className="text-store-footer-fg">
+            Track an order
+          </Link>
         </div>
       </div>
       <div className="flex flex-col items-start justify-between gap-3 border-t border-store-footer-line pt-5 sm:flex-row sm:items-center">

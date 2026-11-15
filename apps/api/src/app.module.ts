@@ -37,15 +37,25 @@ import { UsersModule } from './users/users.module.js';
           // Honour an upstream request id (load balancer / web proxy) or mint one.
           genReqId: (req, res) => {
             const incoming = req.headers['x-request-id'];
-            const id = typeof incoming === 'string' && /^[\w-]{8,64}$/.test(incoming) ? incoming : randomUUID();
+            const id =
+              typeof incoming === 'string' && /^[\w-]{8,64}$/.test(incoming)
+                ? incoming
+                : randomUUID();
             res.setHeader('x-request-id', id);
             return id;
           },
-          redact: ['req.headers.cookie', 'req.headers.authorization', 'req.headers["x-internal-token"]', 'req.headers["x-paystack-signature"]'],
+          redact: [
+            'req.headers.cookie',
+            'req.headers.authorization',
+            'req.headers["x-internal-token"]',
+            'req.headers["x-paystack-signature"]',
+          ],
           autoLogging: { ignore: (req) => req.url === '/v1/health' },
           ...(config.isProduction || config.isTest
             ? {}
-            : { transport: { target: 'pino-pretty', options: { singleLine: true, colorize: true } } }),
+            : {
+                transport: { target: 'pino-pretty', options: { singleLine: true, colorize: true } },
+              }),
         },
       }),
     }),

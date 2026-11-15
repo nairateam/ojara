@@ -32,7 +32,8 @@ const clientParsed = clientSchema.safeParse({
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || undefined,
 });
-if (!clientParsed.success) throw new Error(`Invalid public environment:\n${format(clientParsed.error)}`);
+if (!clientParsed.success)
+  throw new Error(`Invalid public environment:\n${format(clientParsed.error)}`);
 
 export const clientEnv = clientParsed.data;
 

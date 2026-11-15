@@ -10,7 +10,9 @@ export default async function MarketingPlaceholder({ params }: Props) {
   if (!link || slug.length > 2) notFound();
   return (
     <section className="flex flex-col gap-3 px-4 py-20 md:px-20">
-      <h1 className="font-display text-[36px] font-semibold tracking-[-1px] md:text-5xl">{link.label}</h1>
+      <h1 className="font-display text-[36px] font-semibold tracking-[-1px] md:text-5xl">
+        {link.label}
+      </h1>
       <p className="text-lg text-fg-lead">This page is coming soon.</p>
     </section>
   );

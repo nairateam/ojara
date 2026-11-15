@@ -19,7 +19,11 @@ export default async function AdminSection({ params }: Props) {
   return (
     <>
       <PageHeader title={title} />
-      <EmptyState icon={Hammer} title={`${title} is on its way`} body="This admin tool is not built yet." />
+      <EmptyState
+        icon={Hammer}
+        title={`${title} is on its way`}
+        body="This admin tool is not built yet."
+      />
     </>
   );
 }

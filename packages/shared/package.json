@@ -26,5 +26,12 @@
   "devDependencies": {
     "@ojara/eslint-config": "workspace:*",
     "@ojara/tsconfig": "workspace:*"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{json,md,css}": "prettier --write --ignore-unknown"
   }
 }

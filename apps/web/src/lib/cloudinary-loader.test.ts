@@ -14,6 +14,8 @@ describe('cloudinaryLoader', () => {
 
   it('passes through local and absolute URLs', () => {
     expect(cloudinaryLoader({ src: '/icon.svg', width: 64 })).toBe('/icon.svg');
-    expect(cloudinaryLoader({ src: 'https://example.com/a.png', width: 64 })).toBe('https://example.com/a.png');
+    expect(cloudinaryLoader({ src: 'https://example.com/a.png', width: 64 })).toBe(
+      'https://example.com/a.png',
+    );
   });
 });

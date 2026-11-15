@@ -3,7 +3,10 @@ import type { PrismaService } from '../database/prisma.service.js';
 import type { RedisService } from '../database/redis.service.js';
 import { HealthService } from './health.service.js';
 
-const prisma = (ok: boolean) => ({ ping: () => (ok ? Promise.resolve(true) : Promise.reject(new Error('down'))) }) as PrismaService;
+const prisma = (ok: boolean) =>
+  ({
+    ping: () => (ok ? Promise.resolve(true) : Promise.reject(new Error('down'))),
+  }) as PrismaService;
 const redis = (ok: boolean) => ({ ping: () => Promise.resolve(ok) }) as RedisService;
 
 describe('HealthService', () => {

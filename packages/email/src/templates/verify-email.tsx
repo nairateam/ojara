@@ -1,6 +1,11 @@
 import { Button, Heading, Link, Text } from 'react-email';
 import { emailTokens } from '../tokens.js';
-import { buttonStyle, EmailLayout, headingStyle, paragraphStyle } from '../components/email-layout.js';
+import {
+  buttonStyle,
+  EmailLayout,
+  headingStyle,
+  paragraphStyle,
+} from '../components/email-layout.js';
 
 export interface VerifyEmailProps {
   name: string;

@@ -47,7 +47,12 @@ export class PaymentsService {
     try {
       // WebhookEvent is a global (non-tenant) table: the event's store is unknown until processed.
       const row = await this.prisma.db.webhookEvent.create({
-        data: { provider: 'PAYSTACK', eventId, eventType: event, payload: payload as Prisma.InputJsonValue },
+        data: {
+          provider: 'PAYSTACK',
+          eventId,
+          eventType: event,
+          payload: payload as Prisma.InputJsonValue,
+        },
         select: { id: true },
       });
       webhookEventId = row.id;

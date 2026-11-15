@@ -12,7 +12,12 @@ vi.mock('cloudinary', () => ({
 const { CloudinaryImageService } = await import('./cloudinary-image.service.js');
 const { MediaNotConfiguredError } = await import('./image.service.js');
 
-const config = { cloudName: 'ojara-test', apiKey: 'key_123', apiSecret: 'secret_456', envName: 'test' };
+const config = {
+  cloudName: 'ojara-test',
+  apiKey: 'key_123',
+  apiSecret: 'secret_456',
+  envName: 'test',
+};
 
 describe('CloudinaryImageService', () => {
   beforeEach(() => {
@@ -29,19 +34,28 @@ describe('CloudinaryImageService', () => {
     expect(sig.apiKey).toBe('key_123');
     expect(sig.uploadUrl).toBe('https://api.cloudinary.com/v1_1/ojara-test/image/upload');
     expect(apiSignRequest).toHaveBeenCalledWith(
-      { timestamp: sig.timestamp, folder: 'ojara/test/store_a/product', allowed_formats: sig.allowedFormats },
+      {
+        timestamp: sig.timestamp,
+        folder: 'ojara/test/store_a/product',
+        allowed_formats: sig.allowedFormats,
+      },
       'secret_456',
     );
   });
 
   it('refuses to delete assets outside the store folder', async () => {
     const service = new CloudinaryImageService(config);
-    await expect(service.delete('ojara/test/store_b/product/x', 'store_a')).rejects.toThrow(/does not belong/);
+    await expect(service.delete('ojara/test/store_b/product/x', 'store_a')).rejects.toThrow(
+      /does not belong/,
+    );
     await expect(service.delete('ojara/test/store_a/../store_b/x', 'store_a')).rejects.toThrow();
     expect(destroy).not.toHaveBeenCalled();
 
     await service.delete('ojara/test/store_a/product/abc', 'store_a');
-    expect(destroy).toHaveBeenCalledWith('ojara/test/store_a/product/abc', expect.objectContaining({ invalidate: true }));
+    expect(destroy).toHaveBeenCalledWith(
+      'ojara/test/store_a/product/abc',
+      expect.objectContaining({ invalidate: true }),
+    );
   });
 
   it('builds delivery URLs from named presets with f_auto,q_auto', () => {
@@ -53,6 +67,8 @@ describe('CloudinaryImageService', () => {
 
   it('throws a typed error when not configured', () => {
     const service = new CloudinaryImageService({ envName: 'test' });
-    expect(() => service.createUploadSignature({ storeId: 's', kind: 'logo' })).toThrow(MediaNotConfiguredError);
+    expect(() => service.createUploadSignature({ storeId: 's', kind: 'logo' })).toThrow(
+      MediaNotConfiguredError,
+    );
   });
 });

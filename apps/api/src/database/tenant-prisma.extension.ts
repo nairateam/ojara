@@ -39,7 +39,8 @@ function isRecord(value: unknown): value is Args {
 /** Adds the tenant's storeId to a where clause; an explicit filter for another store is an error. */
 function scopeWhere(model: string, where: unknown, storeId: string): Args {
   const base = isRecord(where) ? where : {};
-  if (base.storeId !== undefined && base.storeId !== storeId) throw new CrossTenantAccessError(model);
+  if (base.storeId !== undefined && base.storeId !== storeId)
+    throw new CrossTenantAccessError(model);
   return { ...base, storeId };
 }
 
@@ -49,12 +50,18 @@ function scopeData(model: string, data: unknown, storeId: string): Args {
     // Relation-style writes (`store: { connect }`) could point anywhere; require the scalar.
     throw new CrossTenantAccessError(model);
   }
-  if (data.storeId !== undefined && data.storeId !== storeId) throw new CrossTenantAccessError(model);
+  if (data.storeId !== undefined && data.storeId !== storeId)
+    throw new CrossTenantAccessError(model);
   return { ...data, storeId };
 }
 
 /** Returns new args with the tenant's storeId forced into where/data clauses. */
-export function scopeArgs(model: string, operation: string, rawArgs: unknown, storeId: string): Args {
+export function scopeArgs(
+  model: string,
+  operation: string,
+  rawArgs: unknown,
+  storeId: string,
+): Args {
   const args: Args = isRecord(rawArgs) ? { ...rawArgs } : {};
 
   if (WHERE_OPS.has(operation)) {

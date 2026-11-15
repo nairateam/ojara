@@ -24,7 +24,11 @@ export function MarketingHeader({ appOrigin }: { appOrigin: string }) {
       </Link>
       <nav className="hidden items-center gap-8 lg:flex" aria-label="Main">
         {MARKETING_LINKS.map((l) => (
-          <Link key={l.href} href={l.href} className="text-sm font-medium text-fg-muted hover:text-fg">
+          <Link
+            key={l.href}
+            href={l.href}
+            className="text-sm font-medium text-fg-muted hover:text-fg"
+          >
             {l.label}
           </Link>
         ))}

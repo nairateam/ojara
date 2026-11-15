@@ -45,7 +45,11 @@ export const TenantContext = {
    * (they execute on `.then()`), so returning an un-awaited query from a plain callback would run
    * it after the scope has closed.
    */
-  async runForStore<T>(storeId: string, fn: () => T | PromiseLike<T>, actorId?: string): Promise<T> {
+  async runForStore<T>(
+    storeId: string,
+    fn: () => T | PromiseLike<T>,
+    actorId?: string,
+  ): Promise<T> {
     return storage.run({ storeId, ...(actorId ? { actorId } : {}) }, async () => await fn());
   },
 

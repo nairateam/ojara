@@ -56,7 +56,10 @@ export class TenancyService {
       currency: store.currency,
       primaryColor: store.primaryColor,
       logoPublicId: store.logoPublicId,
-      hostname: classification.kind === 'custom-domain' ? classification.hostname : `${store.slug}.${this.config.env.ROOT_DOMAIN}`,
+      hostname:
+        classification.kind === 'custom-domain'
+          ? classification.hostname
+          : `${store.slug}.${this.config.env.ROOT_DOMAIN}`,
     };
   }
 }

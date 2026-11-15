@@ -9,8 +9,15 @@ import { Button } from './button';
  */
 function Table({ className, ...props }: React.ComponentProps<'table'>) {
   return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto rounded-lg border border-line bg-surface">
-      <table data-slot="table" className={cn('w-full border-collapse text-sm', className)} {...props} />
+    <div
+      data-slot="table-container"
+      className="relative w-full overflow-x-auto rounded-lg border border-line bg-surface"
+    >
+      <table
+        data-slot="table"
+        className={cn('w-full border-collapse text-sm', className)}
+        {...props}
+      />
     </div>
   );
 }
@@ -50,7 +57,13 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
 }
 
 function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
-  return <td data-slot="table-cell" className={cn('h-[58px] px-5 py-3 align-middle', className)} {...props} />;
+  return (
+    <td
+      data-slot="table-cell"
+      className={cn('h-[58px] px-5 py-3 align-middle', className)}
+      {...props}
+    />
+  );
 }
 
 /** Pagination footer: "Showing 1–10 of 86 orders" + Previous / Next. */
@@ -66,7 +79,12 @@ function TablePagination({
   className?: string;
 }) {
   return (
-    <div className={cn('flex items-center justify-between border-t border-line px-[18px] py-3', className)}>
+    <div
+      className={cn(
+        'flex items-center justify-between border-t border-line px-[18px] py-3',
+        className,
+      )}
+    >
       <span className="text-ui text-fg-muted">{summary}</span>
       <div className="flex gap-2">
         <Button variant="secondary" size="sm" disabled={!hasPrevious}>

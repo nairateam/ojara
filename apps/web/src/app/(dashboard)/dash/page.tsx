@@ -46,7 +46,9 @@ export default function DashboardHome() {
         />
         <Card tone="dark" className="justify-between">
           <CardHeader className="flex-col gap-2">
-            <CardTitle className="font-display text-xl font-semibold tracking-display">Share your store</CardTitle>
+            <CardTitle className="font-display text-xl font-semibold tracking-display">
+              Share your store
+            </CardTitle>
             <CardDescription className="text-sm text-fg-on-dark">
               Post your link on WhatsApp status and Instagram bio so customers can order any time.
             </CardDescription>

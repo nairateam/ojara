@@ -21,7 +21,9 @@ export const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().positive().default(4000),
-    LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+    LOG_LEVEL: z
+      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+      .default('info'),
     CORS_ORIGINS: csv,
 
     ROOT_DOMAIN: z.string().trim().min(1).default(DEFAULT_ROOT_DOMAIN),
@@ -47,8 +49,13 @@ export const envSchema = z
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production') {
-      for (const key of ['RESEND_API_KEY', 'PAYSTACK_SECRET_KEY', 'CLOUDINARY_API_SECRET'] as const) {
-        if (!env[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'Required in production' });
+      for (const key of [
+        'RESEND_API_KEY',
+        'PAYSTACK_SECRET_KEY',
+        'CLOUDINARY_API_SECRET',
+      ] as const) {
+        if (!env[key])
+          ctx.addIssue({ code: 'custom', path: [key], message: 'Required in production' });
       }
     }
   });
@@ -69,7 +76,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   }
   const parsed = envSchema.safeParse(source);
   if (!parsed.success) {
-    const details = parsed.error.issues.map((i) => `  - ${i.path.join('.')}: ${i.message}`).join('\n');
+    const details = parsed.error.issues
+      .map((i) => `  - ${i.path.join('.')}: ${i.message}`)
+      .join('\n');
     throw new Error(`Invalid environment configuration:\n${details}`);
   }
   return parsed.data;

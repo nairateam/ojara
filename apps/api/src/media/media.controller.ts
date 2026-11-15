@@ -14,7 +14,10 @@ export class MediaController {
   /** Signed payload for a direct browser upload to Cloudinary. */
   @Post('sign')
   @HttpCode(200)
-  sign(@Param('storeId') storeId: string, @Body({ schema: mediaSignRequestSchema }) body: MediaSignRequest) {
+  sign(
+    @Param('storeId') storeId: string,
+    @Body({ schema: mediaSignRequestSchema }) body: MediaSignRequest,
+  ) {
     return this.media.signUpload(storeId, body);
   }
 }

@@ -1,4 +1,4 @@
-import { defineConfig, env } from 'prisma/config';
+import { defineConfig } from 'prisma/config';
 
 // Load apps/api/.env when present (Node >= 21.7). CI and production inject env vars directly.
 try {
@@ -13,9 +13,10 @@ export default defineConfig({
     path: 'prisma/migrations',
     seed: 'tsx prisma/seed.ts',
   },
-  datasource: {
-    // Migrations run as the schema owner. The app itself connects as the non-superuser
-    // `ojara_app` role (DATABASE_URL) so RLS is enforced.
-    url: env('DATABASE_MIGRATION_URL'),
-  },
+  // Migrations run as the schema owner. The app itself connects as the non-superuser `ojara_app`
+  // role (DATABASE_URL) so RLS is enforced. The URL is optional so `prisma generate` (run before
+  // lint/typecheck/test) works on a fresh clone with no .env; migrate commands require it.
+  ...(process.env.DATABASE_MIGRATION_URL
+    ? { datasource: { url: process.env.DATABASE_MIGRATION_URL } }
+    : {}),
 });

@@ -36,7 +36,10 @@ describe('ResendEmailService', () => {
   });
 
   it('throws on a Resend error so the queue retries', async () => {
-    const { client } = mockResend({ data: null, error: { message: 'rate limited', name: 'rate_limit_exceeded' } });
+    const { client } = mockResend({
+      data: null,
+      error: { message: 'rate limited', name: 'rate_limit_exceeded' },
+    });
     const service = new ResendEmailService(client, 'Ojara <hello@ojara.store>');
     await expect(service.send(email)).rejects.toBeInstanceOf(EmailSendError);
   });

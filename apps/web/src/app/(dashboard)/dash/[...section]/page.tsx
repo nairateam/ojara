@@ -2,7 +2,12 @@ import { Hammer } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { EmptyState } from '@/components/app/empty-state';
-import { MERCHANT_NAV, MERCHANT_NAV_FOOTER, MERCHANT_TABS, navTitle } from '@/components/app/nav-config';
+import {
+  MERCHANT_NAV,
+  MERCHANT_NAV_FOOTER,
+  MERCHANT_TABS,
+  navTitle,
+} from '@/components/app/nav-config';
 import { PageHeader } from '@/components/app/page-header';
 
 type Props = { params: Promise<{ section: string[] }> };

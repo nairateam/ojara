@@ -25,11 +25,26 @@ export function Wordmark({
 }) {
   const s = SIZES[size];
   return (
-    <span className={cn('inline-flex items-end gap-0.5 leading-none', className)} aria-label="Ojara">
-      <span className={cn('font-display font-bold', s.text, tone === 'light' ? 'text-paper' : 'text-forest')}>ojara</span>
+    <span
+      className={cn('inline-flex items-end gap-0.5 leading-none', className)}
+      aria-label="Ojara"
+    >
+      <span
+        className={cn(
+          'font-display font-bold',
+          s.text,
+          tone === 'light' ? 'text-paper' : 'text-forest',
+        )}
+      >
+        ojara
+      </span>
       <span
         aria-hidden
-        className={cn('mb-[0.18em] rounded-full', s.dot, tone === 'light' ? 'bg-paper' : 'bg-fg-muted')}
+        className={cn(
+          'mb-[0.18em] rounded-full',
+          s.dot,
+          tone === 'light' ? 'bg-paper' : 'bg-fg-muted',
+        )}
       />
     </span>
   );

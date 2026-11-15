@@ -7,8 +7,16 @@ import './globals.css';
 // Fonts from the designs: Inter (UI), Bricolage Grotesque (display), JetBrains Mono (SKUs, DNS,
 // IPs) and Fraunces (merchant storefront display only).
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
-const bricolage = Bricolage_Grotesque({ subsets: ['latin'], variable: '--font-bricolage', display: 'swap' });
-const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains', display: 'swap' });
+const bricolage = Bricolage_Grotesque({
+  subsets: ['latin'],
+  variable: '--font-bricolage',
+  display: 'swap',
+});
+const jetbrains = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains',
+  display: 'swap',
+});
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', display: 'swap' });
 
 export const metadata: Metadata = {
@@ -24,7 +32,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en-NG" className={cn(inter.variable, bricolage.variable, jetbrains.variable, fraunces.variable)}>
+    <html
+      lang="en-NG"
+      className={cn(inter.variable, bricolage.variable, jetbrains.variable, fraunces.variable)}
+    >
       <body>{children}</body>
     </html>
   );

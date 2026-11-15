@@ -18,7 +18,8 @@ const buttonVariants = cva(
         secondary:
           'border border-line bg-surface text-fg font-medium hover:bg-selected [&_svg]:text-fg-muted',
         /** Red outline: "Delete store", "Suspend". */
-        destructive: 'border border-danger bg-transparent text-danger font-medium hover:bg-danger-soft',
+        destructive:
+          'border border-danger bg-transparent text-danger font-medium hover:bg-danger-soft',
         /** Paper on dark surfaces (sidebar upgrade, dark promo cards). */
         light: 'bg-paper text-forest font-semibold hover:bg-paper/90',
         /** Text-only link button, 13/600. */
@@ -55,7 +56,13 @@ function Button({
   ...props
 }: React.ComponentProps<'button'> & VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
   const Comp = asChild ? Slot.Root : 'button';
-  return <Comp data-slot="button" className={cn(buttonVariants({ variant, size }), className)} {...props} />;
+  return (
+    <Comp
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size }), className)}
+      {...props}
+    />
+  );
 }
 
 export { Button, buttonVariants };

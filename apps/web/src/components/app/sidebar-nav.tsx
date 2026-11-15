@@ -3,10 +3,19 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { ADMIN_NAV, MERCHANT_NAV, MERCHANT_NAV_FOOTER, type NavGroup, type NavItem } from './nav-config';
+import {
+  ADMIN_NAV,
+  MERCHANT_NAV,
+  MERCHANT_NAV_FOOTER,
+  type NavGroup,
+  type NavItem,
+} from './nav-config';
 
 /** Nav sets are looked up here (client side): icon components can't be passed as RSC props. */
-const GROUPS: Record<'merchant' | 'admin', NavGroup[]> = { merchant: MERCHANT_NAV, admin: ADMIN_NAV };
+const GROUPS: Record<'merchant' | 'admin', NavGroup[]> = {
+  merchant: MERCHANT_NAV,
+  admin: ADMIN_NAV,
+};
 const ITEM_SETS = { 'merchant-footer': MERCHANT_NAV_FOOTER } satisfies Record<string, NavItem[]>;
 
 type Variant = 'merchant' | 'admin';
@@ -38,10 +47,22 @@ function CountPill({ item, variant }: { item: NavItem; variant: Variant }) {
       : item.countTone === 'muted' || variant === 'admin'
         ? 'bg-nav-line text-surface'
         : 'bg-paper text-forest';
-  return <span className={cn('ml-auto rounded-pill px-[7px] py-px text-2xs font-bold', tone)}>{item.count}</span>;
+  return (
+    <span className={cn('ml-auto rounded-pill px-[7px] py-px text-2xs font-bold', tone)}>
+      {item.count}
+    </span>
+  );
 }
 
-export function SidebarNavItems({ set, variant, items: given }: { set?: keyof typeof ITEM_SETS; variant: Variant; items?: NavItem[] }) {
+export function SidebarNavItems({
+  set,
+  variant,
+  items: given,
+}: {
+  set?: keyof typeof ITEM_SETS;
+  variant: Variant;
+  items?: NavItem[];
+}) {
   const items = given ?? (set ? ITEM_SETS[set] : []);
   const pathname = usePathname();
   const s = STYLES[variant];
@@ -78,7 +99,11 @@ export function SidebarNav({ variant }: { variant: Variant }) {
       {groups.map((group, i) => (
         <div key={group.heading ?? i} className="flex flex-col gap-1.5">
           {group.heading ? (
-            <span className={cn('px-2.5 text-2xs font-semibold tracking-label uppercase', s.heading)}>{group.heading}</span>
+            <span
+              className={cn('px-2.5 text-2xs font-semibold tracking-label uppercase', s.heading)}
+            >
+              {group.heading}
+            </span>
           ) : null}
           <SidebarNavItems items={group.items} variant={variant} />
         </div>

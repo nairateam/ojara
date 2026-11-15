@@ -13,7 +13,9 @@ export class PaymentsProcessor extends WorkerHost {
   }
 
   async process(job: Job<PaymentWebhookJob>): Promise<void> {
-    const event = await this.prisma.db.webhookEvent.findUnique({ where: { id: job.data.webhookEventId } });
+    const event = await this.prisma.db.webhookEvent.findUnique({
+      where: { id: job.data.webhookEventId },
+    });
     if (!event || event.processedAt) return;
 
     // TODO(checkout): THE WEBHOOK, NOT THE BROWSER REDIRECT, IS THE SOURCE OF TRUTH FOR PAYMENT STATUS.
@@ -22,8 +24,13 @@ export class PaymentsProcessor extends WorkerHost {
     //  3. charge.success -> Payment PAID + Order.paymentStatus PAID (in one tenantTransaction),
     //     enqueue order-confirmation email; charge.failed -> FAILED; refund.processed -> REFUNDED.
     //  4. Subscription events (subscription.create / invoice.payment_failed) -> billing module.
-    this.logger.log(`Received Paystack ${event.eventType} (${event.eventId}); processing not implemented yet`);
+    this.logger.log(
+      `Received Paystack ${event.eventType} (${event.eventId}); processing not implemented yet`,
+    );
 
-    await this.prisma.db.webhookEvent.update({ where: { id: event.id }, data: { processedAt: new Date() } });
+    await this.prisma.db.webhookEvent.update({
+      where: { id: event.id },
+      data: { processedAt: new Date() },
+    });
   }
 }

@@ -26,11 +26,7 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,mjs,cjs}": [
-      "eslint --fix --no-warn-ignored",
-      "prettier --write"
-    ],
-    "*.{json,md,yml,yaml,css}": "prettier --write"
+    "*.{json,md,yml,yaml,css,js,mjs}": "prettier --write --ignore-unknown"
   },
   "devDependencies": {
     "@ojara/eslint-config": "workspace:*",

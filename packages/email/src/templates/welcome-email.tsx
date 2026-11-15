@@ -1,5 +1,10 @@
 import { Button, Heading, Text } from 'react-email';
-import { buttonStyle, EmailLayout, headingStyle, paragraphStyle } from '../components/email-layout.js';
+import {
+  buttonStyle,
+  EmailLayout,
+  headingStyle,
+  paragraphStyle,
+} from '../components/email-layout.js';
 
 export interface WelcomeEmailProps {
   name: string;

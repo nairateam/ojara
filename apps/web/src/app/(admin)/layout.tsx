@@ -22,7 +22,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <aside className="sticky top-0 hidden h-dvh w-[240px] shrink-0 flex-col gap-6 overflow-y-auto bg-admin-nav px-3.5 py-[22px] lg:flex">
         <div className="flex items-center gap-2 px-2">
           <Wordmark size="sm" tone="light" />
-          <span className="rounded-xs bg-nav-tint px-[7px] py-0.5 text-micro font-bold tracking-label text-admin-fg">ADMIN</span>
+          <span className="rounded-xs bg-nav-tint px-[7px] py-0.5 text-micro font-bold tracking-label text-admin-fg">
+            ADMIN
+          </span>
         </div>
         <SidebarNav variant="admin" />
       </aside>
@@ -33,7 +35,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           leading={
             <span className="flex items-center gap-2">
               <Wordmark size="sm" />
-              <span className="rounded-xs bg-surface-muted px-[7px] py-0.5 text-micro font-bold tracking-label text-fg-muted">ADMIN</span>
+              <span className="rounded-xs bg-surface-muted px-[7px] py-0.5 text-micro font-bold tracking-label text-fg-muted">
+                ADMIN
+              </span>
             </span>
           }
         />

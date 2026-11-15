@@ -3,7 +3,11 @@ import type * as React from 'react';
 import { cn } from '@/lib/utils';
 
 /** Card (§2): surface, 1px border, radius 12, padding 22, no shadow. `tone="dark"` = forest promo card. */
-function Card({ className, tone = 'default', ...props }: React.ComponentProps<'div'> & { tone?: 'default' | 'dark' }) {
+function Card({
+  className,
+  tone = 'default',
+  ...props
+}: React.ComponentProps<'div'> & { tone?: 'default' | 'dark' }) {
   return (
     <div
       data-slot="card"
@@ -18,16 +22,26 @@ function Card({ className, tone = 'default', ...props }: React.ComponentProps<'d
 }
 
 function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="card-header" className={cn('flex items-start justify-between gap-4', className)} {...props} />;
+  return (
+    <div
+      data-slot="card-header"
+      className={cn('flex items-start justify-between gap-4', className)}
+      {...props}
+    />
+  );
 }
 
 /** Inter 15/600. On dark cards the title uses Bricolage. */
 function CardTitle({ className, ...props }: React.ComponentProps<'h3'>) {
-  return <h3 data-slot="card-title" className={cn('text-card font-semibold', className)} {...props} />;
+  return (
+    <h3 data-slot="card-title" className={cn('text-card font-semibold', className)} {...props} />
+  );
 }
 
 function CardDescription({ className, ...props }: React.ComponentProps<'p'>) {
-  return <p data-slot="card-description" className={cn('text-xs text-fg-muted', className)} {...props} />;
+  return (
+    <p data-slot="card-description" className={cn('text-xs text-fg-muted', className)} {...props} />
+  );
 }
 
 function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
@@ -42,9 +56,22 @@ export interface Kpi {
 }
 
 /** KPI strip: one card split into cells with 1px dividers; value Bricolage 28/600 (admin 24). */
-function KpiStrip({ items, compact = false, className }: { items: Kpi[]; compact?: boolean; className?: string }) {
+function KpiStrip({
+  items,
+  compact = false,
+  className,
+}: {
+  items: Kpi[];
+  compact?: boolean;
+  className?: string;
+}) {
   return (
-    <div className={cn('grid overflow-hidden rounded-lg border border-line bg-surface sm:grid-flow-col sm:auto-cols-fr', className)}>
+    <div
+      className={cn(
+        'grid overflow-hidden rounded-lg border border-line bg-surface sm:grid-flow-col sm:auto-cols-fr',
+        className,
+      )}
+    >
       {items.map((kpi) => (
         <div
           key={kpi.label}
@@ -71,7 +98,11 @@ function KpiStrip({ items, compact = false, className }: { items: Kpi[]; compact
                     kpi.delta.direction === 'up' ? 'text-success' : 'text-danger',
                   )}
                 >
-                  {kpi.delta.direction === 'up' ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
+                  {kpi.delta.direction === 'up' ? (
+                    <TrendingUp className="size-3.5" />
+                  ) : (
+                    <TrendingDown className="size-3.5" />
+                  )}
                   {kpi.delta.value}
                 </span>
               ) : null}

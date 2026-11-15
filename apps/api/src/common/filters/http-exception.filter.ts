@@ -68,7 +68,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       if (exception.code === 'P2002') return { status: 409, message: 'Resource already exists' };
       if (exception.code === 'P2025') return { status: 404, message: 'Resource not found' };
     }
-    if (exception instanceof TenantContextMissingError || exception instanceof CrossTenantAccessError) {
+    if (
+      exception instanceof TenantContextMissingError ||
+      exception instanceof CrossTenantAccessError
+    ) {
       // A programming error, but never leak data: treat as forbidden.
       return { status: 403, message: 'Forbidden' };
     }

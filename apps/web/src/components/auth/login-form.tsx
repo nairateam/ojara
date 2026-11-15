@@ -40,7 +40,15 @@ export function LoginForm({ redirectTo = '/' }: { redirectTo?: string }) {
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-[18px]" noValidate>
       <FormField id="email" label="Email">
-        <Input id="email" name="email" type="email" size="lg" autoComplete="email" required placeholder="you@business.com" />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          size="lg"
+          autoComplete="email"
+          required
+          placeholder="you@business.com"
+        />
       </FormField>
       <FormField
         id="password"
@@ -62,7 +70,11 @@ export function LoginForm({ redirectTo = '/' }: { redirectTo?: string }) {
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? 'password-error' : undefined}
           suffix={
-            <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
               {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
           }

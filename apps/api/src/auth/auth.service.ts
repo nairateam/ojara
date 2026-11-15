@@ -17,7 +17,9 @@ export class AuthService {
     this.auth = createAuth(config.env, prisma.base, emails);
   }
 
-  async getSession(headers: IncomingHttpHeaders): Promise<{ user: AuthUser; session: AuthSession } | null> {
+  async getSession(
+    headers: IncomingHttpHeaders,
+  ): Promise<{ user: AuthUser; session: AuthSession } | null> {
     const result = await this.auth.api.getSession({ headers: fromNodeHeaders(headers) });
     if (!result) return null;
     const { user, session } = result;

@@ -24,7 +24,16 @@ export interface InputProps extends Omit<React.ComponentProps<'input'>, 'size' |
 
 function Input({ className, size = 'default', prefix, suffix, ...props }: InputProps) {
   const input = (
-    <input data-slot="input" className={cn(base, sizes[size], (prefix || suffix) && 'border-0 bg-transparent px-0 shadow-none focus-visible:shadow-none', className)} {...props} />
+    <input
+      data-slot="input"
+      className={cn(
+        base,
+        sizes[size],
+        (prefix || suffix) && 'border-0 bg-transparent px-0 shadow-none focus-visible:shadow-none',
+        className,
+      )}
+      {...props}
+    />
   );
   if (!prefix && !suffix) return input;
   return (

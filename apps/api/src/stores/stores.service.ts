@@ -10,7 +10,15 @@ import { PrismaService } from '../database/prisma.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { TenantContext } from '../tenancy/tenant-context.js';
 
-type StoreRow = { id: string; name: string; slug: string; currency: string; country: string; status: StoreDto['status']; createdAt: Date };
+type StoreRow = {
+  id: string;
+  name: string;
+  slug: string;
+  currency: string;
+  country: string;
+  status: StoreDto['status'];
+  createdAt: Date;
+};
 
 function toDto(store: StoreRow): StoreDto {
   return { ...store, createdAt: store.createdAt.toISOString() };
@@ -55,9 +63,17 @@ export class StoresService {
             select: storeSelect,
           });
           await tx.storeMember.create({ data: { storeId: store.id, userId, role: 'OWNER' } });
-          await tx.subscription.create({ data: { storeId: store.id, planId: plan.id, status: 'ACTIVE' } });
+          await tx.subscription.create({
+            data: { storeId: store.id, planId: plan.id, status: 'ACTIVE' },
+          });
           await tx.auditLog.create({
-            data: { storeId: store.id, actorId: userId, action: 'store.created', entity: 'Store', entityId: store.id },
+            data: {
+              storeId: store.id,
+              actorId: userId,
+              action: 'store.created',
+              entity: 'Store',
+              entityId: store.id,
+            },
           });
           return toDto(store);
         } catch (err) {
@@ -84,7 +100,10 @@ export class StoresService {
 
   /** Current tenant's store. Must be called inside a tenant context (StoreAccessGuard). */
   async getCurrent(storeId: string): Promise<StoreDto> {
-    const store = await this.prisma.db.store.findUnique({ where: { id: storeId }, select: storeSelect });
+    const store = await this.prisma.db.store.findUnique({
+      where: { id: storeId },
+      select: storeSelect,
+    });
     if (!store) throw new NotFoundException();
     return toDto(store);
   }

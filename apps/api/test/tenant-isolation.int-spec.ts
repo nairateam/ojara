@@ -39,14 +39,20 @@ beforeAll(async () => {
   });
   const [a, b] = await Promise.all(
     ['a', 'b'].map((suffix) =>
-      owner.store.create({ data: { name: `Iso ${suffix}`, slug: `iso-${suffix}-${run}`, planId: plan.id } }),
+      owner.store.create({
+        data: { name: `Iso ${suffix}`, slug: `iso-${suffix}-${run}`, planId: plan.id },
+      }),
     ),
   );
   if (!a || !b) throw new Error('store setup failed');
   ids.storeA = a.id;
   ids.storeB = b.id;
-  const pa = await owner.product.create({ data: { storeId: a.id, name: 'A product', slug: 'a', basePriceKobo: 100 } });
-  const pb = await owner.product.create({ data: { storeId: b.id, name: 'B product', slug: 'b', basePriceKobo: 200 } });
+  const pa = await owner.product.create({
+    data: { storeId: a.id, name: 'A product', slug: 'a', basePriceKobo: 100 },
+  });
+  const pb = await owner.product.create({
+    data: { storeId: b.id, name: 'B product', slug: 'b', basePriceKobo: 200 },
+  });
   ids.productA = pa.id;
   ids.productB = pb.id;
 });
@@ -74,12 +80,16 @@ describe('application layer (Prisma tenant extension)', () => {
 
   it('rejects an explicit filter for another tenant', async () => {
     await expect(
-      TenantContext.runForStore(ids.storeA, () => db.product.findMany({ where: { storeId: ids.storeB } })),
+      TenantContext.runForStore(ids.storeA, () =>
+        db.product.findMany({ where: { storeId: ids.storeB } }),
+      ),
     ).rejects.toBeInstanceOf(CrossTenantAccessError);
   });
 
   it('cannot read another tenant row by id', async () => {
-    const row = await TenantContext.runForStore(ids.storeA, () => db.product.findUnique({ where: { id: ids.productB } }));
+    const row = await TenantContext.runForStore(ids.storeA, () =>
+      db.product.findUnique({ where: { id: ids.productB } }),
+    );
     expect(row).toBeNull();
   });
 
@@ -89,7 +99,9 @@ describe('application layer (Prisma tenant extension)', () => {
     );
     expect(updated.count).toBe(0);
     await expect(
-      TenantContext.runForStore(ids.storeA, () => db.product.delete({ where: { id: ids.productB } })),
+      TenantContext.runForStore(ids.storeA, () =>
+        db.product.delete({ where: { id: ids.productB } }),
+      ),
     ).rejects.toThrow();
     const b = await owner.product.findUniqueOrThrow({ where: { id: ids.productB } });
     expect(b.name).toBe('B product');
@@ -98,14 +110,22 @@ describe('application layer (Prisma tenant extension)', () => {
   it('cannot create rows for another tenant', async () => {
     await expect(
       TenantContext.runForStore(ids.storeA, () =>
-        db.product.create({ data: { storeId: ids.storeB, name: 'x', slug: `x-${run}`, basePriceKobo: 1 } }),
+        db.product.create({
+          data: { storeId: ids.storeB, name: 'x', slug: `x-${run}`, basePriceKobo: 1 },
+        }),
       ),
     ).rejects.toBeInstanceOf(CrossTenantAccessError);
   });
 
   it('stamps the tenant storeId on creates', async () => {
     const created = await TenantContext.runForStore(ids.storeA, () =>
-      db.category.create({ data: { name: 'Bags', slug: `bags-${run}` } as { name: string; slug: string; storeId: string } }),
+      db.category.create({
+        data: { name: 'Bags', slug: `bags-${run}` } as {
+          name: string;
+          slug: string;
+          storeId: string;
+        },
+      }),
     );
     expect(created.storeId).toBe(ids.storeA);
   });
@@ -124,12 +144,16 @@ describe('application layer (Prisma tenant extension)', () => {
 });
 
 describe('database layer (Postgres RLS, raw SQL as ojara_app)', () => {
-  async function withTenantTx<T>(storeId: string | null, fn: (c: pg.PoolClient) => Promise<T>): Promise<T> {
+  async function withTenantTx<T>(
+    storeId: string | null,
+    fn: (c: pg.PoolClient) => Promise<T>,
+  ): Promise<T> {
     const pool = new pg.Pool({ connectionString: APP_URL, max: 1 });
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      if (storeId) await client.query(`SELECT set_config('app.current_store_id', $1, true)`, [storeId]);
+      if (storeId)
+        await client.query(`SELECT set_config('app.current_store_id', $1, true)`, [storeId]);
       return await fn(client);
     } finally {
       await client.query('ROLLBACK').catch(() => undefined);
@@ -150,7 +174,9 @@ describe('database layer (Postgres RLS, raw SQL as ojara_app)', () => {
       c.query('SELECT id FROM products WHERE id = ANY($1)', [[ids.productA, ids.productB]]),
     );
     expect(res.rows.map((r: { id: string }) => r.id)).toEqual([ids.productA]);
-    const stores = await withTenantTx(ids.storeA, (c) => c.query('SELECT id FROM stores WHERE id = $1', [ids.storeB]));
+    const stores = await withTenantTx(ids.storeA, (c) =>
+      c.query('SELECT id FROM stores WHERE id = $1', [ids.storeB]),
+    );
     expect(stores.rowCount).toBe(0);
   });
 
@@ -159,7 +185,9 @@ describe('database layer (Postgres RLS, raw SQL as ojara_app)', () => {
       c.query(`UPDATE products SET name = 'hacked' WHERE id = $1`, [ids.productB]),
     );
     expect(upd.rowCount).toBe(0);
-    const del = await withTenantTx(ids.storeA, (c) => c.query('DELETE FROM products WHERE id = $1', [ids.productB]));
+    const del = await withTenantTx(ids.storeA, (c) =>
+      c.query('DELETE FROM products WHERE id = $1', [ids.productB]),
+    );
     expect(del.rowCount).toBe(0);
   });
 
@@ -176,7 +204,9 @@ describe('database layer (Postgres RLS, raw SQL as ojara_app)', () => {
 
   it('rejects moving a row to another tenant', async () => {
     await expect(
-      withTenantTx(ids.storeA, (c) => c.query('UPDATE products SET "storeId" = $1 WHERE id = $2', [ids.storeB, ids.productA])),
+      withTenantTx(ids.storeA, (c) =>
+        c.query('UPDATE products SET "storeId" = $1 WHERE id = $2', [ids.storeB, ids.productA]),
+      ),
     ).rejects.toMatchObject({ code: '42501' });
   });
 });

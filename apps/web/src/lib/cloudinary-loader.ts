@@ -8,7 +8,14 @@ import { IMAGE_PRESETS, presetForWidth } from '@ojara/shared';
  * create arbitrary-width derivatives (each unique transformation costs credits).
  * Absolute URLs and local files (/...) are passed through untouched.
  */
-export default function cloudinaryLoader({ src, width }: { src: string; width: number; quality?: number }): string {
+export default function cloudinaryLoader({
+  src,
+  width,
+}: {
+  src: string;
+  width: number;
+  quality?: number;
+}): string {
   if (src.startsWith('/') || /^https?:\/\//.test(src)) return src;
   const cloud = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   if (!cloud) return src;

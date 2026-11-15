@@ -12,7 +12,13 @@ export interface ShellStore {
 }
 
 /** Store switcher (00.06): paper @ 8% tile, marigold logo tile, name + address, chevrons. */
-export function StoreSwitcher({ store, compact = false }: { store: ShellStore; compact?: boolean }) {
+export function StoreSwitcher({
+  store,
+  compact = false,
+}: {
+  store: ShellStore;
+  compact?: boolean;
+}) {
   return (
     <button
       type="button"
@@ -24,12 +30,21 @@ export function StoreSwitcher({ store, compact = false }: { store: ShellStore; c
     >
       <StoreLogoTile name={store.name} size={compact ? 32 : 34} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className={compact ? 'truncate text-base font-semibold text-fg' : 'truncate text-sm font-semibold text-paper'}>
+        <span
+          className={
+            compact
+              ? 'truncate text-base font-semibold text-fg'
+              : 'truncate text-sm font-semibold text-paper'
+          }
+        >
           {store.name}
         </span>
         {compact ? null : <span className="truncate text-xs text-nav-muted">{store.address}</span>}
       </span>
-      <ChevronsUpDown className={compact ? 'size-4 text-fg-muted' : 'size-4 text-nav-muted'} aria-hidden />
+      <ChevronsUpDown
+        className={compact ? 'size-4 text-fg-muted' : 'size-4 text-nav-muted'}
+        aria-hidden
+      />
     </button>
   );
 }
@@ -52,7 +67,8 @@ function PlanCard({ store }: { store: ShellStore }) {
       {store.plan === 'FREE' ? (
         <>
           <p className="text-xs text-nav-fg">
-            Starter adds {PLANS.STARTER.limits.maxProducts} products, custom domains and removes Ojara branding.
+            Starter adds {PLANS.STARTER.limits.maxProducts} products, custom domains and removes
+            Ojara branding.
           </p>
           <Button variant="light" size="sm" className="w-full">
             Upgrade · {formatKobo(PLANS.STARTER.priceKobo)}/mo

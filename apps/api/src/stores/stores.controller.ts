@@ -1,6 +1,11 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-import { type CreateStoreInput, createStoreSchema, storeMembershipSchema, storeSchema } from '@ojara/shared';
+import {
+  type CreateStoreInput,
+  createStoreSchema,
+  storeMembershipSchema,
+  storeSchema,
+} from '@ojara/shared';
 import { z } from 'zod';
 import type { AuthUser } from '../auth/auth.types.js';
 import { StoreAccessGuard } from '../auth/guards/store-access.guard.js';
@@ -14,7 +19,10 @@ export class StoresController {
   constructor(private readonly stores: StoresService) {}
 
   @Post()
-  create(@CurrentUser() user: AuthUser, @Body({ schema: createStoreSchema }) body: CreateStoreInput) {
+  create(
+    @CurrentUser() user: AuthUser,
+    @Body({ schema: createStoreSchema }) body: CreateStoreInput,
+  ) {
     return this.stores.create(user.id, body);
   }
 

@@ -39,7 +39,9 @@ export function TopBar({
             aria-label={searchPlaceholder}
             className="min-w-0 flex-1 bg-transparent text-ui outline-none placeholder:text-fg-subtle"
           />
-          <kbd className="rounded-xs border border-line bg-surface px-1.5 py-px font-sans text-2xs text-fg-muted">/</kbd>
+          <kbd className="rounded-xs border border-line bg-surface px-1.5 py-px font-sans text-2xs text-fg-muted">
+            /
+          </kbd>
         </label>
       </div>
 
@@ -51,10 +53,18 @@ export function TopBar({
             </a>
           </Button>
         ) : null}
-        <Button variant="none" size="icon-ghost" className="relative rounded-md" aria-label="Notifications">
+        <Button
+          variant="none"
+          size="icon-ghost"
+          className="relative rounded-md"
+          aria-label="Notifications"
+        >
           <Bell />
           {hasUnread ? (
-            <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-danger ring-2 ring-surface" aria-hidden />
+            <span
+              className="absolute top-1.5 right-1.5 size-2 rounded-full bg-danger ring-2 ring-surface"
+              aria-hidden
+            />
           ) : null}
         </Button>
         <div className="flex items-center gap-2.5">

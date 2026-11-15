@@ -13,7 +13,9 @@ export default function PricingPage() {
         <h1 className="font-display text-[36px] font-semibold tracking-[-1.2px] md:text-[56px] md:leading-[59px]">
           Simple prices in naira
         </h1>
-        <p className="text-lg text-fg-lead">Ojara takes no cut of your sales. Paystack fees are separate.</p>
+        <p className="text-lg text-fg-lead">
+          Ojara takes no cut of your sales. Paystack fees are separate.
+        </p>
       </div>
       <div className="grid w-full max-w-[1080px] gap-5 md:grid-cols-3">
         {PLAN_KEYS.map((key) => {
@@ -28,10 +30,17 @@ export default function PricingPage() {
               )}
             >
               <h2 className="font-display text-2xl font-semibold">{plan.name}</h2>
-              <p className={cn('text-sm', dark ? 'text-fg-on-dark' : 'text-fg-muted')}>{plan.tagline}</p>
+              <p className={cn('text-sm', dark ? 'text-fg-on-dark' : 'text-fg-muted')}>
+                {plan.tagline}
+              </p>
               <p className="font-display text-[40px] font-semibold tracking-[-1px]">
                 {formatKobo(plan.priceKobo)}
-                <span className={cn('ml-1 text-sm font-normal', dark ? 'text-fg-on-dark' : 'text-fg-muted')}>
+                <span
+                  className={cn(
+                    'ml-1 text-sm font-normal',
+                    dark ? 'text-fg-on-dark' : 'text-fg-muted',
+                  )}
+                >
                   {plan.priceKobo === 0 ? 'forever' : 'per month'}
                 </span>
               </p>

@@ -12,7 +12,13 @@ import { cn } from '@/lib/utils';
 type Variant = 'underline' | 'segmented';
 
 function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
-  return <TabsPrimitive.Root data-slot="tabs" className={cn('flex flex-col gap-4', className)} {...props} />;
+  return (
+    <TabsPrimitive.Root
+      data-slot="tabs"
+      className={cn('flex flex-col gap-4', className)}
+      {...props}
+    />
+  );
 }
 
 function TabsList({
@@ -57,11 +63,25 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
 
 /** Count pill used inside tabs: #E0E3D1, 11/600. */
 function TabCount({ className, ...props }: React.ComponentProps<'span'>) {
-  return <span className={cn('rounded-pill bg-surface-muted px-1.5 text-2xs font-semibold text-fg', className)} {...props} />;
+  return (
+    <span
+      className={cn(
+        'rounded-pill bg-surface-muted px-1.5 text-2xs font-semibold text-fg',
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
-  return <TabsPrimitive.Content data-slot="tabs-content" className={cn('outline-none', className)} {...props} />;
+  return (
+    <TabsPrimitive.Content
+      data-slot="tabs-content"
+      className={cn('outline-none', className)}
+      {...props}
+    />
+  );
 }
 
 export { TabCount, Tabs, TabsContent, TabsList, TabsTrigger };

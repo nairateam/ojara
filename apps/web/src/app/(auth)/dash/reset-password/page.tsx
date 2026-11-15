@@ -18,7 +18,14 @@ export default function ResetPasswordPage() {
     >
       <form className="flex flex-col gap-[18px]">
         <FormField id="email" label="Email">
-          <Input id="email" name="email" type="email" size="lg" disabled placeholder="you@business.com" />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            size="lg"
+            disabled
+            placeholder="you@business.com"
+          />
         </FormField>
         <Button size="lg" className="w-full" disabled>
           Send reset link

@@ -1,7 +1,16 @@
 import { ForbiddenException } from '@nestjs/common';
-import { ALLOWED_IMAGE_FORMATS, IMAGE_PRESETS, type ImagePreset, type MediaKind } from '@ojara/shared';
+import {
+  ALLOWED_IMAGE_FORMATS,
+  IMAGE_PRESETS,
+  type ImagePreset,
+  type MediaKind,
+} from '@ojara/shared';
 import { v2 as cloudinary } from 'cloudinary';
-import { type ImageService, MediaNotConfiguredError, type UploadSignature } from './image.service.js';
+import {
+  type ImageService,
+  MediaNotConfiguredError,
+  type UploadSignature,
+} from './image.service.js';
 
 export interface CloudinaryConfig {
   cloudName?: string | undefined;
@@ -50,11 +59,20 @@ export class CloudinaryImageService implements ImageService {
   async delete(publicId: string, storeId: string): Promise<void> {
     const { cloudName, apiKey, apiSecret } = this.credentials();
     const storePrefix = `ojara/${this.config.envName}/${storeId}/`;
-    if (!PUBLIC_ID_PATTERN.test(publicId) || publicId.includes('..') || !publicId.startsWith(storePrefix)) {
+    if (
+      !PUBLIC_ID_PATTERN.test(publicId) ||
+      publicId.includes('..') ||
+      !publicId.startsWith(storePrefix)
+    ) {
       throw new ForbiddenException('That image does not belong to this store');
     }
     // The SDK reads admin-API credentials from its global config.
-    cloudinary.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret, secure: true });
+    cloudinary.config({
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
+      secure: true,
+    });
     await cloudinary.uploader.destroy(publicId, { invalidate: true, resource_type: 'image' });
   }
 

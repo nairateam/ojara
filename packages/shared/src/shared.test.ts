@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { classifyHost, createStoreSchema, formatKobo, isReservedSlug, nairaToKobo } from './index.js';
+import {
+  classifyHost,
+  createStoreSchema,
+  formatKobo,
+  isReservedSlug,
+  nairaToKobo,
+} from './index.js';
 
 describe('classifyHost', () => {
   const root = 'ojara.localhost';

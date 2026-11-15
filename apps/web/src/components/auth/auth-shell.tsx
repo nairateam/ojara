@@ -30,7 +30,9 @@ export function AuthShell({
       <aside className="hidden w-[620px] shrink-0 flex-col gap-9 bg-forest px-14 py-10 lg:flex">
         <Wordmark size="xl" tone="light" />
         <div className="flex-1" />
-        <h2 className="font-display text-[46px] leading-[48px] font-semibold tracking-[-1.2px] text-paper">{headline}</h2>
+        <h2 className="font-display text-[46px] leading-[48px] font-semibold tracking-[-1.2px] text-paper">
+          {headline}
+        </h2>
         <p className="max-w-[460px] text-base leading-[25px] text-fg-on-dark">{body}</p>
         <div className="flex items-end gap-3" aria-hidden>
           {[200, 170, 200, 170].map((h, i) => (
@@ -39,7 +41,8 @@ export function AuthShell({
         </div>
         <figure className="flex flex-col gap-3 rounded-[14px] bg-nav-tint p-5">
           <blockquote className="text-card leading-[23px] text-paper">
-            &ldquo;I stopped copying prices into DMs. Customers pay on my store and I just pack.&rdquo;
+            &ldquo;I stopped copying prices into DMs. Customers pay on my store and I just
+            pack.&rdquo;
           </blockquote>
           <figcaption className="flex items-center gap-2.5">
             <span className="size-8 rounded-full bg-store-accent" />
@@ -68,7 +71,9 @@ export function AuthShell({
         <main className="flex flex-1 items-center justify-center py-10">
           <div className="flex w-full max-w-[420px] flex-col gap-[18px]">
             <div className="flex flex-col gap-1.5">
-              <h1 className="font-display text-[32px] leading-tight font-semibold tracking-[-0.6px]">{title}</h1>
+              <h1 className="font-display text-[32px] leading-tight font-semibold tracking-[-0.6px]">
+                {title}
+              </h1>
               {subtitle ? <p className="text-sm text-fg-muted">{subtitle}</p> : null}
             </div>
             {children}

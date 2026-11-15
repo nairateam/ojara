@@ -94,27 +94,45 @@ function PaymentBadge({ status, className }: { status: PaymentStatus; className?
 }
 
 /** Small tag (§7): radius 4, padding 1/6, Inter 10/700 — "New", "Low", "Sold out", "Soon". */
-const tagVariants = cva('inline-flex items-center gap-1 rounded-xs px-1.5 py-px text-micro font-bold', {
-  variants: {
-    tone: {
-      success: 'bg-success-soft text-success',
-      info: 'bg-info-soft text-info',
-      warning: 'bg-attention-soft text-warning',
-      danger: 'bg-danger-soft text-danger',
-      muted: 'bg-surface-muted text-fg-subtle',
+const tagVariants = cva(
+  'inline-flex items-center gap-1 rounded-xs px-1.5 py-px text-micro font-bold',
+  {
+    variants: {
+      tone: {
+        success: 'bg-success-soft text-success',
+        info: 'bg-info-soft text-info',
+        warning: 'bg-attention-soft text-warning',
+        danger: 'bg-danger-soft text-danger',
+        muted: 'bg-surface-muted text-fg-subtle',
+      },
     },
+    defaultVariants: { tone: 'muted' },
   },
-  defaultVariants: { tone: 'muted' },
-});
+);
 
-function Tag({ tone, className, ...props }: React.ComponentProps<'span'> & VariantProps<typeof tagVariants>) {
+function Tag({
+  tone,
+  className,
+  ...props
+}: React.ComponentProps<'span'> & VariantProps<typeof tagVariants>) {
   return <span className={cn(tagVariants({ tone }), className)} {...props} />;
 }
 
 /** Upsell lock tag: amber, lock icon, plan name in 9/700 caps. */
-function PlanLockTag({ plan, className }: { plan: 'STARTER' | 'PROFESSIONAL'; className?: string }) {
+function PlanLockTag({
+  plan,
+  className,
+}: {
+  plan: 'STARTER' | 'PROFESSIONAL';
+  className?: string;
+}) {
   return (
-    <span className={cn('inline-flex items-center gap-1 rounded-xs bg-attention-soft px-1.5 py-px text-[9px] font-bold tracking-label text-warning', className)}>
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-xs bg-attention-soft px-1.5 py-px text-[9px] font-bold tracking-label text-warning',
+        className,
+      )}
+    >
       <Lock className="size-[9px]" aria-hidden />
       {plan}
     </span>

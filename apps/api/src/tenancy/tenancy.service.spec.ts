@@ -21,9 +21,13 @@ function setup() {
     return Promise.resolve(args.where.slug === 'demo' ? demo : null);
   });
   const domainFindFirst = vi.fn((args: { where: { hostname: string } }) =>
-    Promise.resolve(args.where.hostname === 'shop.adunni.ng' ? { store: { ...demo, archivedAt: null } } : null),
+    Promise.resolve(
+      args.where.hostname === 'shop.adunni.ng' ? { store: { ...demo, archivedAt: null } } : null,
+    ),
   );
-  const prisma = { db: { store: { findFirst: storeFindFirst }, domain: { findFirst: domainFindFirst } } } as unknown as PrismaService;
+  const prisma = {
+    db: { store: { findFirst: storeFindFirst }, domain: { findFirst: domainFindFirst } },
+  } as unknown as PrismaService;
   const config = { env: { ROOT_DOMAIN: 'ojara.localhost' } } as AppConfigService;
   return new TenancyService(prisma, config);
 }
@@ -37,13 +41,19 @@ describe('TenancyService.resolveHost', () => {
   });
 
   it('resolves a verified custom domain', async () => {
-    await expect(setup().resolveHost('shop.adunni.ng')).resolves.toMatchObject({ hostname: 'shop.adunni.ng' });
+    await expect(setup().resolveHost('shop.adunni.ng')).resolves.toMatchObject({
+      hostname: 'shop.adunni.ng',
+    });
   });
 
   it('404s for unknown stores and platform hosts', async () => {
     const service = setup();
-    await expect(service.resolveHost('nope.ojara.localhost')).rejects.toBeInstanceOf(NotFoundException);
-    await expect(service.resolveHost('app.ojara.localhost')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.resolveHost('nope.ojara.localhost')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    await expect(service.resolveHost('app.ojara.localhost')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
     await expect(service.resolveHost('ojara.localhost')).rejects.toBeInstanceOf(NotFoundException);
   });
 });

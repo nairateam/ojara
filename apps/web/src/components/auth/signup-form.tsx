@@ -26,10 +26,18 @@ export function SignupForm() {
     setPending(true);
     setError(undefined);
     try {
-      await signUpWithEmail({ name: textField(data, 'name'), email, password: textField(data, 'password') });
+      await signUpWithEmail({
+        name: textField(data, 'name'),
+        email,
+        password: textField(data, 'password'),
+      });
       setSentTo(email);
     } catch (err) {
-      setError(err instanceof ApiRequestError && err.body ? String(err.message) : 'Something went wrong. Please try again.');
+      setError(
+        err instanceof ApiRequestError && err.body
+          ? String(err.message)
+          : 'Something went wrong. Please try again.',
+      );
     } finally {
       setPending(false);
     }
@@ -41,7 +49,9 @@ export function SignupForm() {
         <MailCheck className="mt-0.5 size-5 text-success" aria-hidden />
         <div className="flex flex-col gap-0.5">
           <p className="text-ui font-semibold text-success">Check your email</p>
-          <p className="text-xs text-fg-muted">We sent a confirmation link to {sentTo}. Open it to finish setting up.</p>
+          <p className="text-xs text-fg-muted">
+            We sent a confirmation link to {sentTo}. Open it to finish setting up.
+          </p>
         </div>
       </div>
     );
@@ -50,10 +60,25 @@ export function SignupForm() {
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-[18px]" noValidate>
       <FormField id="name" label="Your name">
-        <Input id="name" name="name" size="lg" autoComplete="name" required placeholder="Adùnní Ogunleye" />
+        <Input
+          id="name"
+          name="name"
+          size="lg"
+          autoComplete="name"
+          required
+          placeholder="Adùnní Ogunleye"
+        />
       </FormField>
       <FormField id="email" label="Email">
-        <Input id="email" name="email" type="email" size="lg" autoComplete="email" required placeholder="you@business.com" />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          size="lg"
+          autoComplete="email"
+          required
+          placeholder="you@business.com"
+        />
       </FormField>
       <FormField id="password" label="Password" error={error}>
         <Input

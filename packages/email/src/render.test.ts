@@ -12,7 +12,10 @@ describe('renderEmail', () => {
   });
 
   it('renders the welcome and order templates', async () => {
-    const welcome = await renderEmail('welcome', { name: 'Ada', dashboardUrl: 'https://app.ojara.store' });
+    const welcome = await renderEmail('welcome', {
+      name: 'Ada',
+      dashboardUrl: 'https://app.ojara.store',
+    });
     expect(welcome.text).toMatch(/welcome to ojara, ada/i);
     const order = await renderEmail('order-confirmation', {
       storeName: 'Adunni Threads',

@@ -1,6 +1,9 @@
 import { createElement, type ComponentType } from 'react';
 import { render } from 'react-email';
-import { OrderConfirmationEmail, type OrderConfirmationEmailProps } from './templates/order-confirmation-email.js';
+import {
+  OrderConfirmationEmail,
+  type OrderConfirmationEmailProps,
+} from './templates/order-confirmation-email.js';
 import { VerifyEmail, type VerifyEmailProps } from './templates/verify-email.js';
 import { WelcomeEmail, type WelcomeEmailProps } from './templates/welcome-email.js';
 

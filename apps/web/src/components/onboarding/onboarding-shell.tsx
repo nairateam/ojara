@@ -46,7 +46,9 @@ export function OnboardingShell({
           <h2 className="font-display text-[28px] leading-8 font-semibold tracking-display text-paper">
             Let&apos;s get {storeName} online
           </h2>
-          <p className="text-sm leading-[21px] text-fg-on-dark">Six short steps. Most sellers publish in under 10 minutes.</p>
+          <p className="text-sm leading-[21px] text-fg-on-dark">
+            Six short steps. Most sellers publish in under 10 minutes.
+          </p>
         </div>
         <ol className="flex flex-col">
           {ONBOARDING_STEPS.map((s, i) => {
@@ -57,19 +59,31 @@ export function OnboardingShell({
                 {n < total ? (
                   <span
                     aria-hidden
-                    className={cn('absolute top-[26px] left-[12.25px] h-[calc(100%-26px)] w-[1.5px]', state === 'done' ? 'bg-paper/60' : 'bg-nav-line')}
+                    className={cn(
+                      'absolute top-[26px] left-[12.25px] h-[calc(100%-26px)] w-[1.5px]',
+                      state === 'done' ? 'bg-paper/60' : 'bg-nav-line',
+                    )}
                   />
                 ) : null}
                 <span
                   className={cn(
                     'relative z-10 flex size-[26px] shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                    state === 'upcoming' ? 'border-[1.5px] border-[#59614f] text-fg-subtle' : 'bg-paper text-forest',
+                    state === 'upcoming'
+                      ? 'border-[1.5px] border-[#59614f] text-fg-subtle'
+                      : 'bg-paper text-forest',
                   )}
                 >
                   {state === 'done' ? <Check className="size-3.5" aria-hidden /> : n}
                 </span>
                 <span className="flex flex-col gap-0.5 pt-0.5">
-                  <span className={cn('text-sm font-semibold', state === 'current' ? 'text-paper' : 'text-fg-on-dark')}>{s.title}</span>
+                  <span
+                    className={cn(
+                      'text-sm font-semibold',
+                      state === 'current' ? 'text-paper' : 'text-fg-on-dark',
+                    )}
+                  >
+                    {s.title}
+                  </span>
                   <span className="text-xs text-fg-subtle">{s.sub}</span>
                 </span>
               </li>
@@ -81,7 +95,9 @@ export function OnboardingShell({
           <span className="flex items-center gap-2 font-semibold text-paper">
             <CloudCheck className="size-4" aria-hidden /> Progress saved
           </span>
-          <span className="text-fg-on-dark">Close this tab any time — you&apos;ll pick up right here.</span>
+          <span className="text-fg-on-dark">
+            Close this tab any time — you&apos;ll pick up right here.
+          </span>
           <span className="flex items-center gap-2 font-semibold text-paper">
             <MessageCircle className="size-4" aria-hidden /> Stuck? Chat with us on WhatsApp
           </span>
@@ -114,7 +130,9 @@ export function OnboardingShell({
         <div className="flex flex-1 gap-14 px-4 pt-4 pb-8 md:px-14">
           <section className="flex max-w-[560px] min-w-0 flex-1 flex-col gap-[22px]">
             <div className="flex flex-col gap-1.5">
-              <h1 className="font-display text-[30px] leading-tight font-semibold tracking-[-0.6px]">{title}</h1>
+              <h1 className="font-display text-[30px] leading-tight font-semibold tracking-[-0.6px]">
+                {title}
+              </h1>
               <p className="text-sm text-fg-muted">{subtitle}</p>
             </div>
             {children}
@@ -123,12 +141,18 @@ export function OnboardingShell({
         </div>
 
         <footer className="sticky bottom-0 flex items-center justify-between gap-4 border-t border-line bg-surface px-4 py-[18px] md:px-14">
-          <Button variant="secondary" className={step === 1 ? 'opacity-40' : undefined} disabled={step === 1}>
+          <Button
+            variant="secondary"
+            className={step === 1 ? 'opacity-40' : undefined}
+            disabled={step === 1}
+          >
             Back
           </Button>
           <div className="flex items-center gap-4">
             <span className="hidden text-ui text-fg-muted sm:inline">
-              {isLast ? 'Goes live instantly — you can unpublish any time' : `Next: ${next?.title.toLowerCase() ?? ''}`}
+              {isLast
+                ? 'Goes live instantly — you can unpublish any time'
+                : `Next: ${next?.title.toLowerCase() ?? ''}`}
             </span>
             <Button>
               {isLast ? (

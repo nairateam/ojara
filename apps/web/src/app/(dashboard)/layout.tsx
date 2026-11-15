@@ -2,7 +2,11 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { MobileTabBar } from '@/components/app/mobile-tab-bar';
 import { TopBar } from '@/components/app/top-bar';
-import { MerchantSidebar, type ShellStore, StoreSwitcher } from '@/components/dashboard/merchant-sidebar';
+import {
+  MerchantSidebar,
+  type ShellStore,
+  StoreSwitcher,
+} from '@/components/dashboard/merchant-sidebar';
 import { clientEnv } from '@/env';
 
 export const metadata: Metadata = { title: { default: 'Dashboard', template: '%s · Ojara' } };
@@ -33,7 +37,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           account={{ name: 'Store Owner', role: 'Owner' }}
           leading={<StoreSwitcher store={PLACEHOLDER_STORE} compact />}
         />
-        <main className="flex flex-1 flex-col gap-5 px-4 pt-[18px] pb-28 md:px-8 md:pt-7 lg:pb-8">{children}</main>
+        <main className="flex flex-1 flex-col gap-5 px-4 pt-[18px] pb-28 md:px-8 md:pt-7 lg:pb-8">
+          {children}
+        </main>
       </div>
       <MobileTabBar />
     </div>

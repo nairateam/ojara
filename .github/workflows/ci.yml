@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:18.7-alpine
+        env:
+          POSTGRES_USER: ojara_owner
+          POSTGRES_PASSWORD: ojara_owner_ci
+          POSTGRES_DB: ojara
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ojara_owner -d ojara"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      # API (unit tests never touch these; integration tests and the build do)
+      NODE_ENV: test
+      DATABASE_URL: postgresql://ojara_app:ojara_app_ci@localhost:5432/ojara
+      DATABASE_MIGRATION_URL: postgresql://ojara_owner:ojara_owner_ci@localhost:5432/ojara
+      # Web build-time env (validated by apps/web/src/env.ts)
+      INTERNAL_API_TOKEN: ci-internal-token-not-secret
+      NEXT_PUBLIC_ROOT_DOMAIN: ojara.localhost
+      NEXT_PUBLIC_API_URL: http://api.ojara.localhost:4000
+      API_INTERNAL_URL: http://localhost:4000
+      TURBO_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Create non-superuser app role (same as infra/postgres/init)
+        env:
+          PGPASSWORD: ojara_owner_ci
+        run: |
+          psql -h localhost -U ojara_owner -d ojara -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE ojara_app LOGIN PASSWORD 'ojara_app_ci' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
+          GRANT CONNECT ON DATABASE ojara TO ojara_app;
+          GRANT USAGE ON SCHEMA public TO ojara_app;
+          SQL
+
+      - name: Migrate
+        run: pnpm db:deploy
+
+      - name: Tenant isolation integration tests (Prisma extension + RLS)
+        run: pnpm test:integration
+
+      - name: Build
+        run: pnpm build

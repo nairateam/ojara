@@ -11,7 +11,13 @@ export class ApiRequestError extends Error {
     readonly status: number,
     readonly body: ApiError | null,
   ) {
-    super(body ? (Array.isArray(body.message) ? body.message.join(', ') : body.message) : `API request failed (${status})`);
+    super(
+      body
+        ? Array.isArray(body.message)
+          ? body.message.join(', ')
+          : body.message
+        : `API request failed (${status})`,
+    );
     this.name = 'ApiRequestError';
   }
 }

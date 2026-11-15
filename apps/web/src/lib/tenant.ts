@@ -24,5 +24,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 
 /** CSS variable overrides for the merchant brand (only well-formed hex colours are applied). */
 export function tenantThemeStyle(tenant: ResolvedTenant): Record<string, string> {
-  return tenant.primaryColor && HEX.test(tenant.primaryColor) ? { '--store-primary': tenant.primaryColor } : {};
+  return tenant.primaryColor && HEX.test(tenant.primaryColor)
+    ? { '--store-primary': tenant.primaryColor }
+    : {};
 }

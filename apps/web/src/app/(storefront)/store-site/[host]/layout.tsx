@@ -1,7 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type { CSSProperties, ReactNode } from 'react';
-import { StoreClosed, StorefrontFooter, StorefrontHeader } from '@/components/storefront/storefront-chrome';
+import {
+  StoreClosed,
+  StorefrontFooter,
+  StorefrontHeader,
+} from '@/components/storefront/storefront-chrome';
 import { getTenant, tenantThemeStyle } from '@/lib/tenant';
 
 type Props = { children: ReactNode; params: Promise<{ host: string }> };

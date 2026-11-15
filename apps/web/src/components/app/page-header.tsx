@@ -26,12 +26,17 @@ export function PageHeader({
     <header className={cn('flex flex-wrap items-end justify-between gap-4', className)}>
       <div className="flex min-w-0 flex-col gap-1">
         {back ? (
-          <Link href={back.href} className="mb-1 inline-flex items-center gap-1.5 text-ui text-fg-muted">
+          <Link
+            href={back.href}
+            className="mb-1 inline-flex items-center gap-1.5 text-ui text-fg-muted"
+          >
             <ArrowLeft className="size-3.5" aria-hidden /> {back.label}
           </Link>
         ) : null}
         <div className="flex items-center gap-3">
-          <h1 className="font-display text-[22px] font-semibold tracking-display md:text-h-page">{title}</h1>
+          <h1 className="font-display text-[22px] font-semibold tracking-display md:text-h-page">
+            {title}
+          </h1>
           {badge}
         </div>
         {subtitle ? <p className="text-sm text-fg-muted">{subtitle}</p> : null}

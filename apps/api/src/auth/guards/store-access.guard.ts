@@ -30,7 +30,8 @@ export class StoreAccessGuard implements CanActivate {
     if (!user) throw new UnauthorizedException();
 
     const storeId = req.params.storeId;
-    if (typeof storeId !== 'string' || !storeId) throw new ForbiddenException('No store in request');
+    if (typeof storeId !== 'string' || !storeId)
+      throw new ForbiddenException('No store in request');
 
     const required = this.reflector.getAllAndOverride<StoreRole[] | undefined>(STORE_ROLES_KEY, [
       context.getHandler(),

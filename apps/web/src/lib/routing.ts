@@ -23,7 +23,10 @@ export type RouteTarget =
   | { kind: 'not-found' };
 
 /** Pure host -> route decision (tenant lookup happens afterwards for storefront hosts). */
-export function routeForHost(host: string, rootDomain: string): { target: RouteTarget; host: HostClassification } {
+export function routeForHost(
+  host: string,
+  rootDomain: string,
+): { target: RouteTarget; host: HostClassification } {
   const c = classifyHost(host, rootDomain);
   switch (c.kind) {
     case 'marketing':

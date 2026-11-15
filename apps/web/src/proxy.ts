@@ -25,7 +25,9 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = path;
     url.search = search;
-    return headers ? NextResponse.rewrite(url, { request: { headers } }) : NextResponse.rewrite(url);
+    return headers
+      ? NextResponse.rewrite(url, { request: { headers } })
+      : NextResponse.rewrite(url);
   };
 
   if (target.kind === 'not-found') return rewriteTo(ROUTE_PREFIX.notFound);
@@ -46,7 +48,10 @@ export async function proxy(request: NextRequest) {
   // Pass the resolved tenant to the storefront layout so it doesn't look it up again.
   const headers = new Headers(request.headers);
   headers.set(TENANT_HEADER, JSON.stringify(tenant));
-  return rewriteTo(internalPath(`${ROUTE_PREFIX.storefront}/${encodeURIComponent(tenant.hostname)}`, pathname), headers);
+  return rewriteTo(
+    internalPath(`${ROUTE_PREFIX.storefront}/${encodeURIComponent(tenant.hostname)}`, pathname),
+    headers,
+  );
 }
 
 export const config = {

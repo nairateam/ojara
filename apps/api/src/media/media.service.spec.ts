@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { PLANS } from '@ojara/shared';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../database/prisma.service.js';
@@ -25,7 +29,9 @@ function setup(opts: { imageCount?: number; configured?: boolean } = {}) {
   const prisma = {
     db: {
       store: { findUnique: vi.fn().mockResolvedValue({ plan: { key: 'FREE' } }) },
-      product: { findUnique: vi.fn().mockResolvedValue({ _count: { images: opts.imageCount ?? 0 } }) },
+      product: {
+        findUnique: vi.fn().mockResolvedValue({ _count: { images: opts.imageCount ?? 0 } }),
+      },
     },
   } as unknown as PrismaService;
   return new MediaService(images, prisma);
@@ -35,26 +41,34 @@ const free = PLANS.FREE.limits;
 
 describe('MediaService.signUpload', () => {
   it('signs uploads within plan limits', async () => {
-    const res = await setup().signUpload('store_a', { kind: 'product', productId: 'p1', fileSize: 1000 });
+    const res = await setup().signUpload('store_a', {
+      kind: 'product',
+      productId: 'p1',
+      fileSize: 1000,
+    });
     expect(res.folder).toBe('ojara/test/store_a/product');
     expect(res.maxFileSize).toBe(free.maxImageBytes);
   });
 
   it('rejects files over the plan size limit', async () => {
-    await expect(setup().signUpload('store_a', { kind: 'logo', fileSize: free.maxImageBytes + 1 })).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(
+      setup().signUpload('store_a', { kind: 'logo', fileSize: free.maxImageBytes + 1 }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('enforces maxImagesPerProduct', async () => {
     await expect(
-      setup({ imageCount: free.maxImagesPerProduct }).signUpload('store_a', { kind: 'product', productId: 'p1', fileSize: 10 }),
+      setup({ imageCount: free.maxImagesPerProduct }).signUpload('store_a', {
+        kind: 'product',
+        productId: 'p1',
+        fileSize: 10,
+      }),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('returns 503 when Cloudinary is not configured', async () => {
-    await expect(setup({ configured: false }).signUpload('store_a', { kind: 'logo', fileSize: 10 })).rejects.toBeInstanceOf(
-      ServiceUnavailableException,
-    );
+    await expect(
+      setup({ configured: false }).signUpload('store_a', { kind: 'logo', fileSize: 10 }),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 });
