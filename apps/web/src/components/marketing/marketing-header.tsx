@@ -1,20 +1,17 @@
-import { Menu } from 'lucide-react';
 import Link from 'next/link';
 import { Wordmark } from '@/components/brand/wordmark';
-import { Button } from '@/components/ui/button';
+import { MarketingMobileMenu, MarketingNavLinks } from './marketing-nav';
 
-export const MARKETING_LINKS = [
-  { href: '/how-it-works', label: 'How it works' },
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/stores', label: 'Stores on Ojara' },
-  { href: '/help', label: 'Help' },
-] as const;
+export { MARKETING_LINKS } from './marketing-nav';
 
-/** 01.xx header: transparent on paper, padding 20/80, centred links, "Log in" + "Start free". */
+/**
+ * 01.xx header: transparent on paper, padding 20/80, centred links, "Log in" + "Start free".
+ * Mobile (01.07): padding 8/16/12, 24px wordmark, small "Start free" and a menu button.
+ */
 export function MarketingHeader({ appOrigin }: { appOrigin: string }) {
   return (
-    <header className="flex items-center justify-between px-4 pt-2 pb-3 md:px-20 md:py-5">
-      <Link href="/" aria-label="Ojara home">
+    <header className="relative flex items-center justify-between px-4 pt-2 pb-3 md:px-10 md:py-5 xl:px-20">
+      <Link href="/" aria-label="Ojara home" className="flex-1">
         <span className="hidden md:inline">
           <Wordmark size="lg" />
         </span>
@@ -22,27 +19,21 @@ export function MarketingHeader({ appOrigin }: { appOrigin: string }) {
           <Wordmark size="md" />
         </span>
       </Link>
-      <nav className="hidden items-center gap-8 lg:flex" aria-label="Main">
-        {MARKETING_LINKS.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className="text-sm font-medium text-fg-muted hover:text-fg"
-          >
-            {l.label}
-          </Link>
-        ))}
-      </nav>
-      <div className="flex items-center gap-3 md:gap-4">
-        <a href={`${appOrigin}/login`} className="hidden text-sm font-semibold md:inline">
+      <MarketingNavLinks />
+      <div className="flex flex-1 items-center justify-end gap-3 md:gap-4">
+        <a
+          href={`${appOrigin}/login`}
+          className="hidden text-sm font-semibold text-fg hover:text-fg-muted md:inline"
+        >
           Log in
         </a>
-        <Button asChild size="sm" className="md:h-10 md:px-[18px] md:text-sm">
-          <a href={`${appOrigin}/signup`}>Start free</a>
-        </Button>
-        <button type="button" className="lg:hidden" aria-label="Menu">
-          <Menu className="size-[22px]" />
-        </button>
+        <a
+          href={`${appOrigin}/signup`}
+          className="rounded-md bg-forest px-3.5 py-2 text-ui font-semibold text-paper transition-colors hover:bg-forest/90 md:px-[18px] md:py-2.5 md:text-sm"
+        >
+          Start free
+        </a>
+        <MarketingMobileMenu loginHref={`${appOrigin}/login`} />
       </div>
     </header>
   );

@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Wordmark } from '@/components/brand/wordmark';
-import { SidebarNav } from '@/components/app/sidebar-nav';
+import { AdminSidebarNav } from '@/components/admin/admin-sidebar';
 import { TopBar } from '@/components/app/top-bar';
+import { Wordmark } from '@/components/brand/wordmark';
+import { ADMIN_ACCOUNT } from '@/mock/admin';
 
 export const metadata: Metadata = {
   title: { default: 'Admin', template: '%s · Ojara Admin' },
@@ -26,12 +27,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             ADMIN
           </span>
         </div>
-        <SidebarNav variant="admin" />
+        <AdminSidebarNav />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
           searchPlaceholder="Search merchants, stores or domains"
-          account={{ name: 'Platform Admin', role: 'Operations admin' }}
+          account={{ name: ADMIN_ACCOUNT.name, role: ADMIN_ACCOUNT.role }}
+          hasUnread
           leading={
             <span className="flex items-center gap-2">
               <Wordmark size="sm" />

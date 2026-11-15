@@ -1,6 +1,7 @@
 import { Bell, ExternalLink, Search } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 /**
  * App top bar (00.05): surface, 64px high, 1px bottom border, padding 0/32.
@@ -12,6 +13,8 @@ export function TopBar({
   account,
   hasUnread = false,
   leading,
+  notifications,
+  className,
 }: {
   searchPlaceholder: string;
   viewStoreHref?: string;
@@ -19,6 +22,12 @@ export function TopBar({
   hasUnread?: boolean;
   /** Mobile-only leading slot (e.g. store switcher) shown below lg. */
   leading?: ReactNode;
+  /**
+   * Replaces the static bell with an interactive one, e.g. the merchant notifications popover
+   * (03.02). The node renders its own bell button.
+   */
+  notifications?: ReactNode;
+  className?: string;
 }) {
   const initials = account.name
     .split(/\s+/)
@@ -28,7 +37,12 @@ export function TopBar({
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line bg-surface px-4 lg:px-8">
+    <header
+      className={cn(
+        'sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line bg-surface px-4 lg:px-8',
+        className,
+      )}
+    >
       <div className="flex min-w-0 items-center gap-3">
         {leading ? <div className="lg:hidden">{leading}</div> : null}
         <label className="hidden w-[380px] max-w-full items-center gap-2.5 rounded-md border border-line bg-paper px-3 py-2 md:flex">
@@ -53,20 +67,22 @@ export function TopBar({
             </a>
           </Button>
         ) : null}
-        <Button
-          variant="none"
-          size="icon-ghost"
-          className="relative rounded-md"
-          aria-label="Notifications"
-        >
-          <Bell />
-          {hasUnread ? (
-            <span
-              className="absolute top-1.5 right-1.5 size-2 rounded-full bg-danger ring-2 ring-surface"
-              aria-hidden
-            />
-          ) : null}
-        </Button>
+        {notifications ?? (
+          <Button
+            variant="none"
+            size="icon-ghost"
+            className="relative rounded-md"
+            aria-label="Notifications"
+          >
+            <Bell />
+            {hasUnread ? (
+              <span
+                className="absolute top-1.5 right-1.5 size-2 rounded-full bg-danger ring-2 ring-surface"
+                aria-hidden
+              />
+            ) : null}
+          </Button>
+        )}
         <div className="flex items-center gap-2.5">
           <span className="flex size-[34px] items-center justify-center rounded-full bg-surface-muted text-ui font-semibold">
             {initials}

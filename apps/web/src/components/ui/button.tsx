@@ -33,7 +33,7 @@ const buttonVariants = cva(
         default: 'h-9 px-3.5 text-sm',
         sm: 'h-8 px-3 text-ui',
         /** Auth submit: 48 high, radius 10, 15/600. */
-        lg: 'h-12 rounded-[10px] px-5 text-card',
+        lg: 'h-12 rounded-[10px] px-5 text-title',
         /** Marketing CTA: radius 12, padding 16/26, 16/600. */
         cta: 'h-14 rounded-lg px-[26px] text-base',
         /** 32x32 bordered icon button (panel headers). */

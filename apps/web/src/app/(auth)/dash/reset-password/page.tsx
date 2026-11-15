@@ -1,36 +1,30 @@
+import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { AuthShell } from '@/components/auth/auth-shell';
-import { FormField } from '@/components/auth/form-field';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ResetCodeForm } from '@/components/auth/reset-code-form';
+import { ONBOARDING_SELLER } from '@/mock/onboarding';
 
 export const metadata: Metadata = { title: 'Reset password' };
 
-/** 02.03 Reset Password — PLACEHOLDER (the SMS-code flow in the design needs an SMS provider). */
+/** 02.03 Reset Password — visual only (the SMS-code flow needs an SMS provider). */
 export default function ResetPasswordPage() {
   return (
     <AuthShell
-      headline="Locked out? We'll get you back in."
-      body="We'll send a reset link to the email on your account."
+      headline="Locked out? We’ll get you back in."
       switchPrompt={{ question: 'Remembered it?', label: 'Log in', href: '/login' }}
-      title="Reset your password"
-      subtitle="Password reset is coming soon. Contact support if you're locked out."
+      before={
+        <Link
+          href="/login"
+          className="flex w-fit items-center gap-1.5 text-ui font-medium text-fg-muted hover:text-fg"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden /> Use a different number
+        </Link>
+      }
+      title="Enter your reset code"
+      subtitle={`We sent a 6-digit code by SMS to ${ONBOARDING_SELLER.phoneMasked}. It expires in 10 minutes.`}
     >
-      <form className="flex flex-col gap-[18px]">
-        <FormField id="email" label="Email">
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            size="lg"
-            disabled
-            placeholder="you@business.com"
-          />
-        </FormField>
-        <Button size="lg" className="w-full" disabled>
-          Send reset link
-        </Button>
-      </form>
+      <ResetCodeForm />
     </AuthShell>
   );
 }

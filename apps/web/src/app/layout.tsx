@@ -10,6 +10,8 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'sw
 const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
   variable: '--font-bricolage',
+  // Optical-size axis: large display sizes render narrower, matching the designs.
+  axes: ['opsz'],
   display: 'swap',
 });
 const jetbrains = JetBrains_Mono({

@@ -1,31 +1,41 @@
-import { PageContainer } from '@/components/app/page-container';
-import { Inbox } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import type { Metadata } from 'next';
-import { EmptyState } from '@/components/app/empty-state';
+import {
+  ActivationFunnel,
+  ExperienceCard,
+  MrrChart,
+  NeedsAPerson,
+} from '@/components/admin/overview';
+import { AdminKpiStrip } from '@/components/admin/primitives';
+import { PageContainer } from '@/components/app/page-container';
 import { PageHeader } from '@/components/app/page-header';
-import { KpiStrip } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ADMIN_ACCOUNT, OVERVIEW } from '@/mock/admin';
 
 export const metadata: Metadata = { title: 'Overview' };
 
-/** 06.01 Overview — SHELL ONLY. */
+/** 06.01 Overview — platform health: KPIs, MRR, activation funnel, experience, work queue. */
 export default function AdminOverview() {
   return (
     <PageContainer>
-      <PageHeader title="Overview" subtitle="Platform health at a glance." />
-      <KpiStrip
-        compact
-        items={[
-          { label: 'Live stores', value: '—' },
-          { label: 'MRR', value: '—' },
-          { label: 'GMV (30 days)', value: '—' },
-          { label: 'Open tickets', value: '—' },
-        ]}
+      <PageHeader
+        title={`Good afternoon, ${ADMIN_ACCOUNT.firstName}`}
+        subtitle={OVERVIEW.subtitle}
+        actions={
+          <Button variant="secondary">
+            <CalendarDays /> This month
+          </Button>
+        }
       />
-      <EmptyState
-        icon={Inbox}
-        title="Nothing needs a person yet"
-        body="Abuse reports, failed renewals and support tickets will queue here once those features are live."
-      />
+      <AdminKpiStrip items={OVERVIEW.kpis} />
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_460px]">
+        <MrrChart data={OVERVIEW.mrr} />
+        <ActivationFunnel funnel={OVERVIEW.funnel} />
+      </div>
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_460px]">
+        <ExperienceCard items={OVERVIEW.experience} />
+        <NeedsAPerson items={OVERVIEW.needsAPerson} />
+      </div>
     </PageContainer>
   );
 }

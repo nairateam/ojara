@@ -34,7 +34,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
 /** Inter 15/600. On dark cards the title uses Bricolage. */
 function CardTitle({ className, ...props }: React.ComponentProps<'h3'>) {
   return (
-    <h3 data-slot="card-title" className={cn('text-card font-semibold', className)} {...props} />
+    <h3 data-slot="card-title" className={cn('text-title font-semibold', className)} {...props} />
   );
 }
 

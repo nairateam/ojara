@@ -9,10 +9,9 @@ export default function SignupPage() {
   return (
     <AuthShell
       headline="Your market stall, now open online."
-      body="Set up a store in an afternoon. Take payments with Paystack, manage delivery and stock, and keep every order in one place."
       switchPrompt={{ question: 'Already selling on Ojara?', label: 'Log in', href: '/login' }}
       title="Create your free store"
-      subtitle="No card needed. You can upgrade any time."
+      subtitle="No card needed. Stay on the Free plan as long as you like."
     >
       <SignupForm />
     </AuthShell>
