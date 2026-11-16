@@ -8,7 +8,8 @@ interface Entry {
 /**
  * Tiny in-memory TTL cache for host -> tenant lookups done in the proxy.
  * Per Next.js server process only; entries disappear on restart and are not shared between
- * instances. Misses (unknown hosts) are cached for a shorter time to blunt host-header probing.
+ * instances. Misses (unknown hosts) and stores that aren't live are cached for at most 10 s: short
+ * enough that publishing shows up quickly, long enough to blunt host-header probing.
  *
  * TODO(scale): move to Redis (shared across instances) and invalidate on store slug/domain/status
  * changes via an API-published event, instead of relying on TTL expiry.
@@ -39,7 +40,9 @@ export class TenantCache {
       const oldest = this.entries.keys().next().value;
       if (oldest !== undefined) this.entries.delete(oldest);
     }
-    const ttl = value ? this.ttlMs : Math.min(this.ttlMs, 10_000);
+    // Only live stores get the full TTL: a draft that is published (or a host that starts to
+    // resolve) should go live within seconds, not after the full cache period.
+    const ttl = value?.status === 'PUBLISHED' ? this.ttlMs : Math.min(this.ttlMs, 10_000);
     this.entries.set(host, { value, expiresAt: this.now() + ttl });
   }
 

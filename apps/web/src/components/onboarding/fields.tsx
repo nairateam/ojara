@@ -47,7 +47,7 @@ export function NativeSelect({
       ) : null}
       <select
         className={cn(
-          'w-full appearance-none rounded-md border border-line bg-surface text-fg outline-none focus-visible:border-forest focus-visible:shadow-focus',
+          'w-full appearance-none rounded-md border border-line bg-surface text-fg outline-none focus-visible:border-forest focus-visible:shadow-focus aria-invalid:border-danger',
           size === 'lg' ? 'h-[46px] pr-10 text-sm' : 'h-10 pr-9 text-[13px]',
           leading ? 'pl-12' : size === 'lg' ? 'pl-3.5' : 'pl-3',
         )}

@@ -1,3 +1,4 @@
+import { STORE_CATEGORIES, type StoreDto } from '@ojara/shared';
 import {
   ArrowLeft,
   ArrowRight,
@@ -9,17 +10,21 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { SignOutButton } from '@/components/auth/sign-out';
 import { Wordmark } from '@/components/brand/wordmark';
 import { cn } from '@/lib/utils';
-import { ONBOARDING_STORE } from '@/mock/onboarding';
+import {
+  FormMessage,
+  type OnboardingAction,
+  OnboardingForm,
+  SubmitButton,
+} from './onboarding-form';
 
 /** The six onboarding steps from 02.04–02.09 (hrefs are visible paths on app.ojara.*). */
 export const ONBOARDING_STEPS = [
   {
     title: 'Business details',
     sub: 'Name, category, location',
-    /** Summary of what was entered, shown in the rail once the step is done. */
-    doneSub: 'Fashion & clothing · Lagos, NGN',
     href: '/onboarding',
     eta: 'about 9 minutes left',
     nextHint: 'store address & brand',
@@ -27,7 +32,6 @@ export const ONBOARDING_STEPS = [
   {
     title: 'Store address & brand',
     sub: 'Name, web address, logo, colour',
-    doneSub: undefined,
     href: '/onboarding/store',
     eta: 'about 7 minutes left',
     nextHint: 'add your first products',
@@ -35,7 +39,6 @@ export const ONBOARDING_STEPS = [
   {
     title: 'Add your first products',
     sub: 'Photos, prices and stock',
-    doneSub: undefined,
     href: '/onboarding/products',
     eta: 'about 5 minutes left',
     nextHint: 'get paid with Paystack',
@@ -43,7 +46,6 @@ export const ONBOARDING_STEPS = [
   {
     title: 'Get paid with Paystack',
     sub: 'Connect your bank account',
-    doneSub: undefined,
     href: '/onboarding/payments',
     eta: 'about 3 minutes left',
     nextHint: 'delivery & pickup',
@@ -51,7 +53,6 @@ export const ONBOARDING_STEPS = [
   {
     title: 'Delivery & pickup',
     sub: 'Zones, charges, pickup point',
-    doneSub: undefined,
     href: '/onboarding/delivery',
     eta: 'about 2 minutes left',
     nextHint: 'preview & publish',
@@ -59,20 +60,44 @@ export const ONBOARDING_STEPS = [
   {
     title: 'Preview & publish',
     sub: 'Check everything, then go live',
-    doneSub: undefined,
     href: '/onboarding/publish',
     eta: 'last step',
     nextHint: '',
   },
 ] as const;
 
+type ShellStore = Pick<StoreDto, 'name' | 'slug' | 'category' | 'state' | 'currency'>;
+
+export function categoryLabel(id: string | null): string | undefined {
+  return STORE_CATEGORIES.find((c) => c.id === id)?.label;
+}
+
+/** What the rail shows under a finished step ("Fashion & clothing · Lagos, NGN"). */
+function doneSummary(n: number, store: ShellStore | null): string | undefined {
+  if (!store) return undefined;
+  if (n === 1) {
+    return [categoryLabel(store.category), store.state && `${store.state}, ${store.currency}`]
+      .filter(Boolean)
+      .join(' · ');
+  }
+  if (n === 2) return store.name;
+  return undefined;
+}
+
 /**
  * Onboarding layout (02.04–02.09): 380px forest rail (wordmark, headline, vertical stepper, saved
  * note), main column with progress segments + "Save & exit", form + preview column, and a sticky
- * footer whose Back / Continue link to the previous / next step.
+ * footer with Back and Continue / Publish.
+ *
+ * With an `action`, the main column is a form posting to that Server Action and Continue submits
+ * it; steps already reached are links in the rail.
  */
 export function OnboardingShell({
   step,
+  reached = step,
+  store = null,
+  action,
+  notice,
   title,
   subtitle,
   preview,
@@ -82,6 +107,13 @@ export function OnboardingShell({
 }: {
   /** 1-based current step. */
   step: number;
+  /** Furthest step reached (rail links). */
+  reached?: number;
+  /** The store being set up; null before step 1 is saved. */
+  store?: ShellStore | null;
+  action?: OnboardingAction;
+  /** Shown above the step's fields (e.g. "coming soon" for steps not built yet). */
+  notice?: ReactNode;
   title: string;
   subtitle: string;
   preview?: ReactNode;
@@ -97,13 +129,80 @@ export function OnboardingShell({
   const next = ONBOARDING_STEPS[step];
   const isLast = step === total;
 
+  const main = (
+    <>
+      <div className="flex flex-1 flex-col gap-10 px-4 pt-2 pb-8 md:px-14 md:pt-4 min-[1340px]:flex-row min-[1340px]:gap-14">
+        <section className={cn('flex min-w-0 flex-1 flex-col gap-[22px]', formClassName)}>
+          <div className="flex flex-col gap-1.5">
+            <h1 className="font-display text-[26px] leading-tight font-semibold tracking-[-0.6px] text-fg sm:text-[30px]">
+              {title}
+            </h1>
+            <p className="text-sm leading-5 text-fg-muted">{subtitle}</p>
+          </div>
+          {action ? <FormMessage /> : null}
+          {notice}
+          {children}
+        </section>
+        {preview ? (
+          <div
+            className={cn(
+              'mx-auto flex w-full max-w-[320px] shrink-0 flex-col min-[1340px]:mx-0',
+              previewClassName,
+            )}
+          >
+            {preview}
+          </div>
+        ) : null}
+      </div>
+
+      <footer className="sticky bottom-0 z-10 flex items-center justify-between gap-4 border-t border-line bg-surface px-4 py-[18px] md:px-14">
+        {prev ? (
+          <Link href={prev.href} className={backClass}>
+            <ArrowLeft className="size-4 text-fg-muted" aria-hidden /> Back
+          </Link>
+        ) : (
+          <span aria-disabled className={cn(backClass, 'pointer-events-none opacity-40')}>
+            <ArrowLeft className="size-4 text-fg-muted" aria-hidden /> Back
+          </span>
+        )}
+        <div className="flex items-center gap-4">
+          <span className="hidden text-ui text-fg-muted md:inline">
+            {isLast
+              ? 'Goes live instantly — you can unpublish any time'
+              : `Next: ${current.nextHint}`}
+          </span>
+          {action ? (
+            <SubmitButton
+              className={continueClass}
+              pendingLabel={isLast ? 'Publishing…' : 'Saving…'}
+            >
+              {isLast ? (
+                <>
+                  <Rocket className="size-4" aria-hidden /> Publish my store
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="size-4" aria-hidden /> Continue
+                </>
+              )}
+            </SubmitButton>
+          ) : (
+            <Link href={next?.href ?? '/'} className={continueClass}>
+              <ArrowRight className="size-4" aria-hidden /> Continue
+            </Link>
+          )}
+        </div>
+      </footer>
+    </>
+  );
+
   return (
     <div className="flex min-h-dvh bg-paper">
       <aside className="sticky top-0 hidden h-dvh w-[380px] shrink-0 flex-col gap-9 overflow-y-auto bg-forest px-10 py-9 lg:flex">
         <Wordmark size="lg" tone="light" />
         <div className="flex flex-col gap-2.5">
           <h2 className="font-display text-[28px] leading-8 font-semibold tracking-[-0.5px] text-paper">
-            Let&rsquo;s get {ONBOARDING_STORE.name} online
+            Let&rsquo;s get {store?.name ?? 'your store'} online
           </h2>
           <p className="text-sm leading-[21px] text-fg-on-dark">
             Six short steps. Most sellers publish in under 10 minutes.
@@ -112,7 +211,8 @@ export function OnboardingShell({
         <ol className="flex flex-col">
           {ONBOARDING_STEPS.map((s, i) => {
             const n = i + 1;
-            const state = n < step ? 'done' : n === step ? 'current' : 'upcoming';
+            const state = n === step ? 'current' : n < reached || n < step ? 'done' : 'upcoming';
+            const summary = state === 'done' ? doneSummary(n, store) : undefined;
             const body = (
               <>
                 <span className="flex flex-col items-center self-stretch">
@@ -145,28 +245,25 @@ export function OnboardingShell({
                   >
                     {s.title}
                   </span>
-                  <span className="text-xs text-fg-subtle">
-                    {state === 'done' && s.doneSub ? s.doneSub : s.sub}
-                  </span>
+                  <span className="truncate text-xs text-fg-subtle">{summary || s.sub}</span>
                 </span>
               </>
             );
+            const height = n < total ? 'h-[62px]' : 'h-[26px]';
             return (
               <li key={s.title} aria-current={state === 'current' ? 'step' : undefined}>
-                {state === 'done' ? (
+                {n !== step && n <= reached ? (
                   <Link
                     href={s.href}
                     className={cn(
                       'group flex gap-3.5 rounded-sm outline-none focus-visible:shadow-focus',
-                      n < total ? 'h-[62px]' : 'h-[26px]',
+                      height,
                     )}
                   >
                     {body}
                   </Link>
                 ) : (
-                  <div className={cn('flex gap-3.5', n < total ? 'h-[62px]' : 'h-[26px]')}>
-                    {body}
-                  </div>
+                  <div className={cn('flex gap-3.5', height)}>{body}</div>
                 )}
               </li>
             );
@@ -175,7 +272,7 @@ export function OnboardingShell({
         <div className="flex-1" />
         <div className="flex flex-col gap-3 rounded-lg bg-nav-tint p-4">
           <span className="flex items-center gap-2 text-ui font-medium text-paper">
-            <CloudCheck className="size-4" aria-hidden /> Progress saved 12 seconds ago
+            <CloudCheck className="size-4" aria-hidden /> Progress saves at every step
           </span>
           <span className="text-xs text-fg-on-dark">
             Close this tab any time — you&rsquo;ll pick up right here.
@@ -210,67 +307,32 @@ export function OnboardingShell({
               ))}
             </span>
           </div>
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 self-start text-ui font-semibold whitespace-nowrap text-fg-muted hover:text-fg md:self-center"
-          >
-            Save &amp; exit <LogOut className="size-[15px]" aria-hidden />
-          </Link>
-        </div>
-
-        <div className="flex flex-1 flex-col gap-10 px-4 pt-2 pb-8 md:px-14 md:pt-4 min-[1340px]:flex-row min-[1340px]:gap-14">
-          <section className={cn('flex min-w-0 flex-1 flex-col gap-[22px]', formClassName)}>
-            <div className="flex flex-col gap-1.5">
-              <h1 className="font-display text-[26px] leading-tight font-semibold tracking-[-0.6px] text-fg sm:text-[30px]">
-                {title}
-              </h1>
-              <p className="text-sm leading-5 text-fg-muted">{subtitle}</p>
-            </div>
-            {children}
-          </section>
-          {preview ? (
-            <div
-              className={cn(
-                'mx-auto flex w-full max-w-[320px] shrink-0 flex-col min-[1340px]:mx-0',
-                previewClassName,
-              )}
-            >
-              {preview}
-            </div>
-          ) : null}
-        </div>
-
-        <footer className="sticky bottom-0 z-10 flex items-center justify-between gap-4 border-t border-line bg-surface px-4 py-[18px] md:px-14">
-          {prev ? (
-            <Link href={prev.href} className={backClass}>
-              <ArrowLeft className="size-4 text-fg-muted" aria-hidden /> Back
+          {store ? (
+            <Link href="/" className={exitClass}>
+              Save &amp; exit <LogOut className="size-[15px]" aria-hidden />
             </Link>
           ) : (
-            <span aria-disabled className={cn(backClass, 'pointer-events-none opacity-40')}>
-              <ArrowLeft className="size-4 text-fg-muted" aria-hidden /> Back
-            </span>
+            // Nothing to save before step 1; the dashboard would send them straight back here.
+            <SignOutButton className={exitClass}>
+              Log out <LogOut className="size-[15px]" aria-hidden />
+            </SignOutButton>
           )}
-          <div className="flex items-center gap-4">
-            <span className="hidden text-ui text-fg-muted md:inline">
-              {isLast
-                ? 'Goes live instantly — you can unpublish any time'
-                : `Next: ${current.nextHint}`}
-            </span>
-            {isLast ? (
-              <Link href="/" className={continueClass}>
-                <Rocket className="size-4" aria-hidden /> Publish my store
-              </Link>
-            ) : (
-              <Link href={next?.href ?? '/'} className={continueClass}>
-                <ArrowRight className="size-4" aria-hidden /> Continue
-              </Link>
-            )}
-          </div>
-        </footer>
+        </div>
+
+        {action ? (
+          <OnboardingForm action={action} className="flex flex-1 flex-col">
+            {main}
+          </OnboardingForm>
+        ) : (
+          <div className="flex flex-1 flex-col">{main}</div>
+        )}
       </div>
     </div>
   );
 }
+
+const exitClass =
+  'flex items-center gap-1.5 self-start text-ui font-semibold whitespace-nowrap text-fg-muted hover:text-fg md:self-center';
 
 const backClass =
   'inline-flex items-center gap-2 rounded-md border border-line bg-surface px-[13px] py-2 text-sm font-medium text-fg outline-none transition-colors hover:bg-selected focus-visible:shadow-focus';

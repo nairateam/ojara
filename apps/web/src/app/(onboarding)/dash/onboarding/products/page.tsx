@@ -4,12 +4,16 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { NativeSelect } from '@/components/onboarding/fields';
+import { ComingSoonNote } from '@/components/onboarding/coming-soon-note';
 import { OnboardingShell } from '@/components/onboarding/onboarding-shell';
 import { PhonePreview, ProductsSoFar } from '@/components/onboarding/phone-preview';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { DRAFT_PRODUCT, ONBOARDING_PRODUCTS, PRODUCT_CATEGORIES } from '@/mock/onboarding';
+import { requireOnboardingStep } from '@/lib/auth/guards';
+import { withStore } from '@/lib/onboarding/preview';
+import { continueFromProducts } from '../actions';
 
 export const metadata: Metadata = { title: 'Set up your store · Add products' };
 
@@ -35,15 +39,25 @@ function SmallField({
 }
 
 /** 02.06 Onboarding 3 · Add your first products (visual form). */
-export default function OnboardingProductsPage() {
+export default async function OnboardingProductsPage() {
+  const { store, reached } = await requireOnboardingStep(3);
   return (
     <OnboardingShell
       step={3}
+      reached={reached}
+      store={store}
+      action={continueFromProducts}
+      notice={
+        <ComingSoonNote>
+          Adding products here opens with image uploads. The products below are examples — continue
+          for now and add yours from the dashboard.
+        </ComingSoonNote>
+      }
       title="Add your first products"
       subtitle="Start with three or more. You can add the rest later — the Free plan holds up to 20."
       formClassName="gap-[18px]"
       preview={
-        <PhonePreview caption="Your store so far">
+        <PhonePreview caption="Your store so far" {...withStore(store)}>
           <ProductsSoFar />
         </PhonePreview>
       }

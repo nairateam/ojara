@@ -14,6 +14,7 @@ import {
   ShareStoreStrip,
 } from '@/components/dashboard/home-cards';
 import { type DashKpi, KpiGridCard, KpiStripCard } from '@/components/dashboard/kpis';
+import { SetupBanner } from '@/components/dashboard/setup-banner';
 import { Button } from '@/components/ui/button';
 import { firstName as getFirstName, requireMerchant } from '@/lib/auth/guards';
 import { BEST_SELLERS, DAILY_SALES, HOME_KPIS, NEEDS_ATTENTION, ORDERS } from '@/mock/dashboard';
@@ -21,8 +22,13 @@ import { BEST_SELLERS, DAILY_SALES, HOME_KPIS, NEEDS_ATTENTION, ORDERS } from '@
 export const metadata: Metadata = { title: 'Home' };
 
 /** 03.01 Dashboard (desktop) and 04.01 Home (mobile). */
-export default async function DashboardHome() {
-  const { user, summary, storeAddress, storeUrl } = await requireMerchant();
+type Props = { searchParams: Promise<{ published?: string }> };
+
+export default async function DashboardHome({ searchParams }: Props) {
+  const [{ user, membership, summary, storeAddress, storeUrl }, { published }] = await Promise.all([
+    requireMerchant(),
+    searchParams,
+  ]);
   const firstName = getFirstName(user.name);
   const greeting = timeOfDayGreeting();
   const k = HOME_KPIS;
@@ -62,6 +68,12 @@ export default async function DashboardHome() {
 
   return (
     <PageContainer className="gap-[18px] lg:gap-6">
+      <SetupBanner
+        onboardingStep={membership.onboardingStep}
+        completed={membership.onboardingCompletedAt !== null}
+        justPublished={published === '1'}
+        storeUrl={storeUrl}
+      />
       {/* 04.01 greeting */}
       <div className="flex items-center justify-between gap-3 lg:hidden">
         <div className="flex flex-col gap-0.5">

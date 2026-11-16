@@ -226,6 +226,29 @@ unless noted.
   sets it is not built yet. `/security` is in its own route group, outside the admin shell that
   redirects to it.
 
+- **Onboarding** (`app/(onboarding)/dash/onboarding`):
+  - **Saving:** each step's Continue posts to a Server Action (`actions.ts`). It authenticates,
+    takes the store from the session (never from the form), re-validates with the shared Zod
+    schemas and calls the API, which checks the store role and validates again.
+  - **The form:** submits through a transition rather than the `action` prop, so a validation
+    error doesn't wipe what the merchant typed.
+  - **Step 1** creates the store as a DRAFT on the Free plan. Its address is generated from the
+    name (`suggestStoreSlug`, numbered when taken), and the merchant can change it in step 2,
+    which checks availability live.
+  - **Progress:** `stores.onboardingStep` holds the furthest step reached and never moves
+    backwards. Steps beyond it redirect, so the flow can't be skipped by URL.
+  - **Not built yet:** steps 3–5 (products, payments, delivery) say "coming soon" and record
+    progress only. Logo upload waits for real Cloudinary keys.
+  - **Step 6** publishes the store (owner only), which sets `onboardingCompletedAt`.
+  - **Leaving early:** "Save & exit" goes to the dashboard, which shows a "Finish setting up"
+    banner until the store is published.
+  - This keeps the existing `DRAFT` status for unfinished stores rather than adding an
+    `ONBOARDING` status, which is still an open question.
+- **Storefront tenant header:** the proxy passes the resolved store to the storefront layout
+  URI-encoded. Header values must be Latin-1, and names such as "Ọjà Èkó" crashed the storefront
+  when sent as raw JSON.
+- **Tenant cache:** stores that aren't live are cached for at most 10 s, so a newly published
+  store is reachable within seconds.
 - Env validated with Zod at boot in both apps.
 - `cn` is taught the custom font-size tokens; without it, `text-ui`/`text-2xs` etc. were dropped
   next to text colours. The 15 px size token is `text-title` (`text-card` clashed with the card

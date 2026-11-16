@@ -64,17 +64,17 @@ internal prefix):
 
 ### 02 Auth and onboarding — `(auth)` and `(onboarding)` on `app.` (admin login on `admin.`)
 
-| Screen                                 | Route                                    | Status                                                                    |
-| -------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------- |
-| 02.01 Log In                           | `/login`                                 | UI built + live (email + password, two-step code, Google when configured) |
-| 02.02 Sign Up                          | `/signup`                                | UI built + live (phone field not sent anywhere yet)                       |
-| 02.03 Reset Password                   | `/reset-password`, `/reset-password/new` | UI built + live — **by emailed link, not SMS code** (see conflicts)       |
-| 02.04 Onboarding 1 – Business Details  | `/onboarding`                            | UI built                                                                  |
-| 02.05 Onboarding 2 – Store Setup       | `/onboarding/store`                      | UI built                                                                  |
-| 02.06 Onboarding 3 – Add Products      | `/onboarding/products`                   | UI built                                                                  |
-| 02.07 Onboarding 4 – Get Paid          | `/onboarding/payments`                   | UI built                                                                  |
-| 02.08 Onboarding 5 – Delivery          | `/onboarding/delivery`                   | UI built                                                                  |
-| 02.09 Onboarding 6 – Preview & Publish | `/onboarding/publish`                    | UI built                                                                  |
+| Screen                                 | Route                                    | Status                                                                           |
+| -------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------- |
+| 02.01 Log In                           | `/login`                                 | UI built + live (email + password, two-step code, Google when configured)        |
+| 02.02 Sign Up                          | `/signup`                                | UI built + live (phone field not sent anywhere yet)                              |
+| 02.03 Reset Password                   | `/reset-password`, `/reset-password/new` | UI built + live — **by emailed link, not SMS code** (see conflicts)              |
+| 02.04 Onboarding 1 – Business Details  | `/onboarding`                            | **Live**: creates the draft store (address generated from the name) / updates it |
+| 02.05 Onboarding 2 – Store Setup       | `/onboarding/store`                      | **Live**: name, address (live availability check), brand colour; logo later      |
+| 02.06 Onboarding 3 – Add Products      | `/onboarding/products`                   | UI + saved progress; "coming soon" note (needs image uploads)                    |
+| 02.07 Onboarding 4 – Get Paid          | `/onboarding/payments`                   | UI + saved progress; "coming soon" note (needs Paystack decision)                |
+| 02.08 Onboarding 5 – Delivery          | `/onboarding/delivery`                   | UI + saved progress; "coming soon" note (needs delivery feature)                 |
+| 02.09 Onboarding 6 – Preview & Publish | `/onboarding/publish`                    | **Live**: real checklist; publishes the store (owner only)                       |
 
 ### 03 Merchant app (desktop) and 04 Merchant app (mobile) — `(dashboard)` on `app.`
 

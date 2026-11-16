@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { clientEnv, serverEnv } from '@/env';
 import { resolveTenant } from '@/lib/api/server';
 import {
+  encodeTenantHeader,
   internalPath,
   REQUEST_PATH_HEADER,
   ROUTE_PREFIX,
@@ -63,7 +64,7 @@ export async function proxy(request: NextRequest) {
 
   // Pass the resolved tenant to the storefront layout so it doesn't look it up again.
   const headers = new Headers(request.headers);
-  headers.set(TENANT_HEADER, JSON.stringify(tenant));
+  headers.set(TENANT_HEADER, encodeTenantHeader(tenant));
   return rewriteTo(
     internalPath(`${ROUTE_PREFIX.storefront}/${encodeURIComponent(tenant.hostname)}`, pathname),
     headers,

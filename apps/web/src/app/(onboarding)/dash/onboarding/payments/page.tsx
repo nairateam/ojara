@@ -12,10 +12,13 @@ import {
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import { choiceClass, OnbField, NativeSelect } from '@/components/onboarding/fields';
+import { ComingSoonNote } from '@/components/onboarding/coming-soon-note';
 import { OnboardingShell } from '@/components/onboarding/onboarding-shell';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { NIGERIAN_BANKS, PAYOUT, PAYOUT_EXAMPLE } from '@/mock/onboarding';
+import { requireOnboardingStep } from '@/lib/auth/guards';
+import { continueFromPayments } from '../actions';
 
 export const metadata: Metadata = { title: 'Set up your store · Get paid' };
 
@@ -112,10 +115,20 @@ function PayoutExample() {
 }
 
 /** 02.07 Onboarding 4 · Get paid with Paystack (visual form). */
-export default function OnboardingPaymentsPage() {
+export default async function OnboardingPaymentsPage() {
+  const { store, reached } = await requireOnboardingStep(4);
   return (
     <OnboardingShell
       step={4}
+      reached={reached}
+      store={store}
+      action={continueFromPayments}
+      notice={
+        <ComingSoonNote>
+          Paystack payouts are being set up. Nothing below is saved yet — continue for now; you’ll
+          connect your bank before taking payments.
+        </ComingSoonNote>
+      }
       title="Where should we send your money?"
       subtitle="Customers pay with Paystack. Paystack sends the money straight to your bank account — Ojara never holds it."
       formClassName="gap-[26px]"

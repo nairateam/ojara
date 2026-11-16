@@ -89,17 +89,17 @@ enum PaymentProvider {
 // ──────────────────── Auth (Better Auth core schema) ────────────────────
 
 model User {
-  id            String       @id
-  name          String
-  email         String       @unique
-  emailVerified Boolean      @default(false)
-  image         String?
+  id               String       @id
+  name             String
+  email            String       @unique
+  emailVerified    Boolean      @default(false)
+  image            String?
   /// Global role. Store roles live on StoreMember. Not settable through Better Auth input.
-  role          PlatformRole @default(USER)
+  role             PlatformRole @default(USER)
   /// Set by the Better Auth twoFactor plugin once an authenticator app is verified.
-  twoFactorEnabled Boolean   @default(false)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  twoFactorEnabled Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   sessions    Session[]
   accounts    Account[]
@@ -188,13 +188,13 @@ model RateLimit {
 // ───────────────────────────── Platform ─────────────────────────────
 
 model Plan {
-  id        String  @id @default(uuid(7))
-  key       PlanKey @unique
+  id        String   @id @default(uuid(7))
+  key       PlanKey  @unique
   name      String
   priceKobo Int
   /// { maxProducts, maxImagesPerProduct, maxImageBytes, customDomain, staffAccounts, removeBranding }
   limits    Json
-  isActive  Boolean @default(true)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -223,33 +223,40 @@ model WebhookEvent {
 // ───────────────────────────── Stores ─────────────────────────────
 
 model Store {
-  id                String      @id @default(uuid(7))
-  name              String
-  slug              String      @unique
-  status            StoreStatus @default(DRAFT)
-  currency          String      @default("NGN") @db.VarChar(3)
-  country           String      @default("NG") @db.VarChar(2)
-  planId            String
+  id                     String      @id @default(uuid(7))
+  name                   String
+  slug                   String      @unique
+  status                 StoreStatus @default(DRAFT)
+  currency               String      @default("NGN") @db.VarChar(3)
+  country                String      @default("NG") @db.VarChar(2)
+  planId                 String
+  /// "What do you sell?" id from @ojara/shared STORE_CATEGORIES.
+  category               String?     @db.VarChar(32)
+  // Onboarding: furthest step reached (1-6) and when the merchant finished (published).
+  onboardingStep         Int         @default(1)
+  onboardingCompletedAt  DateTime?
   // Branding
-  logoPublicId      String?
-  primaryColor      String?     @db.VarChar(7)
+  logoPublicId           String?
+  primaryColor           String?     @db.VarChar(7)
   // Contact
-  contactEmail      String?
-  contactPhone      String?
-  whatsappNumber    String?
-  addressLine       String?
-  city              String?
-  state             String?
+  contactEmail           String?
+  contactPhone           String?
+  whatsappNumber         String?
+  /// Instagram username without the "@".
+  instagramHandle        String?     @db.VarChar(30)
+  addressLine            String?
+  city                   String?
+  state                  String?
   // Delivery
-  pickupEnabled     Boolean     @default(false)
-  pickupAddress     String?
+  pickupEnabled          Boolean     @default(false)
+  pickupAddress          String?
   // Paystack subaccount (only if Ojara routes funds; see DECISIONS.md open questions)
   paystackSubaccountCode String?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  archivedAt        DateTime?
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  archivedAt             DateTime?
 
-  plan          Plan           @relation(fields: [planId], references: [id])
+  plan          Plan             @relation(fields: [planId], references: [id])
   members       StoreMember[]
   domains       Domain[]
   subscriptions Subscription[]
@@ -302,17 +309,17 @@ model Domain {
 }
 
 model Subscription {
-  id                     String             @id @default(uuid(7))
-  storeId                String
-  planId                 String
-  status                 SubscriptionStatus @default(ACTIVE)
-  provider               PaymentProvider?
-  providerCustomerCode   String?
-  providerSubscriptionCode String?          @unique
-  currentPeriodEnd       DateTime?
-  cancelAt               DateTime?
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
+  id                       String             @id @default(uuid(7))
+  storeId                  String
+  planId                   String
+  status                   SubscriptionStatus @default(ACTIVE)
+  provider                 PaymentProvider?
+  providerCustomerCode     String?
+  providerSubscriptionCode String?            @unique
+  currentPeriodEnd         DateTime?
+  cancelAt                 DateTime?
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
 
   store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
   plan  Plan  @relation(fields: [planId], references: [id])
@@ -486,17 +493,17 @@ model OrderItem {
 }
 
 model Payment {
-  id          String          @id @default(uuid(7))
-  storeId     String
-  orderId     String
-  provider    PaymentProvider @default(PAYSTACK)
-  reference   String          @unique
-  amountKobo  Int
-  status      PaymentStatus   @default(PENDING)
-  rawPayload  Json?
-  paidAt      DateTime?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id         String          @id @default(uuid(7))
+  storeId    String
+  orderId    String
+  provider   PaymentProvider @default(PAYSTACK)
+  reference  String          @unique
+  amountKobo Int
+  status     PaymentStatus   @default(PENDING)
+  rawPayload Json?
+  paidAt     DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
 
   store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)

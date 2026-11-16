@@ -3,7 +3,7 @@ import { type ResolvedTenant, resolvedTenantSchema } from '@ojara/shared';
 import { headers } from 'next/headers';
 import { cache } from 'react';
 import { resolveTenant } from './api/server';
-import { TENANT_HEADER } from './routing';
+import { decodeTenantHeader, TENANT_HEADER } from './routing';
 
 /**
  * The current storefront tenant. Read from the header the proxy sets after resolving the host
@@ -12,9 +12,9 @@ import { TENANT_HEADER } from './routing';
  * storefront routes are only reachable through the proxy rewrite.
  */
 export const getTenant = cache(async (host: string): Promise<ResolvedTenant | null> => {
-  const raw = (await headers()).get(TENANT_HEADER);
-  if (raw) {
-    const parsed = resolvedTenantSchema.safeParse(JSON.parse(raw));
+  const fromProxy = decodeTenantHeader((await headers()).get(TENANT_HEADER));
+  if (fromProxy) {
+    const parsed = resolvedTenantSchema.safeParse(fromProxy);
     if (parsed.success && parsed.data.hostname === host) return parsed.data;
   }
   return resolveTenant(host);

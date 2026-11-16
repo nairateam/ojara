@@ -3,3 +3,4 @@ export * from './domains.js';
 export * from './media.js';
 export * from './plans.js';
 export * from './statuses.js';
+export * from './onboarding.js';

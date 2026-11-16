@@ -1,3 +1,4 @@
+import { slugAvailabilitySchema } from '@ojara/shared';
 import { z } from 'zod';
 import { clientEnv } from '@/env';
 import { apiRequest } from './client';
@@ -121,4 +122,16 @@ export async function continueWithGoogle(): Promise<void> {
 /** Ends the session (Better Auth clears the cookie on *.ROOT_DOMAIN). */
 export async function signOut(): Promise<void> {
   await authPost('/sign-out', {}, z.unknown());
+}
+
+/** Whether a store web address is free (live check while typing). */
+export function checkSlugAvailability(slug: string, storeId?: string, signal?: AbortSignal) {
+  const query = new URLSearchParams({ slug, ...(storeId ? { storeId } : {}) });
+  return apiRequest({
+    baseUrl: clientEnv.NEXT_PUBLIC_API_URL,
+    path: `/stores/slug-availability?${query.toString()}`,
+    credentials: 'include',
+    schema: slugAvailabilitySchema,
+    ...(signal ? { signal } : {}),
+  });
 }

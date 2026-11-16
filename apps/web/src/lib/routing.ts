@@ -95,3 +95,20 @@ export function signedOutRedirect(
   const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   return isPublic ? null : loginPath(`${pathname}${search}`);
 }
+
+/**
+ * Header values must be Latin-1, but store names often aren't ("Ọjà Èkó", emoji), so the tenant
+ * travels URI-encoded. Decoding returns null for anything malformed (callers then look it up).
+ */
+export function encodeTenantHeader(tenant: unknown): string {
+  return encodeURIComponent(JSON.stringify(tenant));
+}
+
+export function decodeTenantHeader(value: string | null): unknown {
+  if (!value) return null;
+  try {
+    return JSON.parse(decodeURIComponent(value)) as unknown;
+  } catch {
+    return null;
+  }
+}

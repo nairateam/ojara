@@ -1,7 +1,7 @@
 import { formatKobo } from '@ojara/shared';
 import { BatteryFull, Lock, MessageCircle, Plus, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import {
   CHECKOUT_TOTAL_KOBO,
@@ -22,13 +22,43 @@ export function PreviewCaption({ children }: { children: ReactNode }) {
   );
 }
 
+/** What the preview shows of the merchant's store (sample values until they enter their own). */
+export interface PreviewStore {
+  name: string;
+  host: string;
+  whatsapp?: string | null;
+  /** Brand colour (buttons and links). */
+  primaryColor?: string | null;
+}
+
+const SAMPLE_STORE: PreviewStore = {
+  name: ONBOARDING_STORE.name,
+  host: ONBOARDING_STORE.host,
+  whatsapp: ONBOARDING_STORE.whatsapp,
+};
+
 /**
  * Phone mock for the onboarding live preview: 300×600, 10px forest bezel (radius 36), paper
  * screen (radius 28), status bar, URL bar and the store's nav (logo tile + Fraunces name).
  */
-export function PhonePreview({ caption, children }: { caption: string; children: ReactNode }) {
+export function PhonePreview({
+  caption,
+  store = SAMPLE_STORE,
+  children,
+}: {
+  caption: string;
+  store?: PreviewStore;
+  children: ReactNode;
+}) {
+  const style = store.primaryColor
+    ? ({ '--store-primary': store.primaryColor } as CSSProperties)
+    : undefined;
   return (
-    <figure className="flex flex-col items-center gap-3" aria-label={`Preview: ${caption}`}>
+    <figure
+      className="flex flex-col items-center gap-3"
+      aria-label={`Preview: ${caption}`}
+      style={style}
+    >
       <figcaption>
         <PreviewCaption>{caption}</PreviewCaption>
       </figcaption>
@@ -39,17 +69,15 @@ export function PhonePreview({ caption, children }: { caption: string; children:
           </div>
           <div className="px-3.5 pb-2">
             <div className="flex items-center justify-center gap-1 rounded-md bg-[#EFEAE0] px-2.5 py-[5px] text-[11px] text-fg-muted">
-              <Lock className="size-2.5" aria-hidden /> {ONBOARDING_STORE.host}
+              <Lock className="size-2.5" aria-hidden /> {store.host}
             </div>
           </div>
           <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
             <span className="flex items-center gap-2">
               <span className="flex size-[26px] items-center justify-center rounded-sm bg-store-accent font-display text-sm font-bold text-store-accent-ink">
-                {ONBOARDING_STORE.initial}
+                {store.name.trim().charAt(0).toUpperCase() || 'O'}
               </span>
-              <span className="font-serif text-[15px] font-semibold text-fg">
-                {ONBOARDING_STORE.name}
-              </span>
+              <span className="font-serif text-[15px] font-semibold text-fg">{store.name}</span>
             </span>
             <ShoppingBag className="size-4 text-fg" aria-hidden />
           </div>
@@ -61,7 +89,11 @@ export function PhonePreview({ caption, children }: { caption: string; children:
 }
 
 /** 02.04: grey placeholders + the WhatsApp contact strip. */
-export function SkeletonStore() {
+export function SkeletonStore({
+  whatsapp = ONBOARDING_STORE.whatsapp,
+}: {
+  whatsapp?: string | null;
+}) {
   return (
     <div className="flex flex-col gap-3 p-3.5" aria-hidden>
       <div className="h-[150px] rounded-[10px] bg-[#EFE9DE]" />
@@ -76,7 +108,8 @@ export function SkeletonStore() {
         ))}
       </div>
       <div className="flex items-center gap-2 rounded-md bg-[#E6F4EC] px-2.5 py-2 text-[10px] font-semibold text-success">
-        <MessageCircle className="size-3" /> Chat on WhatsApp · {ONBOARDING_STORE.whatsapp}
+        <MessageCircle className="size-3" /> Chat on WhatsApp
+        {whatsapp ? ` · ${whatsapp}` : ''}
       </div>
     </div>
   );

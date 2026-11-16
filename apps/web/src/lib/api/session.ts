@@ -34,14 +34,32 @@ async function forwardedHeaders(): Promise<Record<string, string>> {
   };
 }
 
-async function signedInRequest<S extends z.ZodType>(path: `/${string}`, schema: S) {
+async function signedInRequest<S extends z.ZodType>(
+  path: `/${string}`,
+  schema: S,
+  write?: { method: 'POST' | 'PATCH' | 'PUT' | 'DELETE'; body?: unknown },
+) {
   return apiRequest({
     baseUrl: serverEnv().API_INTERNAL_URL,
     path,
     schema,
     headers: await forwardedHeaders(),
-    signal: AbortSignal.timeout(5_000),
+    signal: AbortSignal.timeout(write ? 10_000 : 5_000),
+    ...(write ? { method: write.method, body: write.body ?? {} } : {}),
   });
+}
+
+/**
+ * Signed-in write from a Server Action (never memoised). The API authorises it from the
+ * forwarded session cookie, so callers pass only what changes, never who may change it.
+ */
+export function apiWrite<S extends z.ZodType>(
+  method: 'POST' | 'PATCH' | 'PUT' | 'DELETE',
+  path: `/${string}`,
+  schema: S,
+  body?: unknown,
+) {
+  return signedInRequest(path, schema, { method, body });
 }
 
 /** The signed-in user, or null when there is no valid session. Other failures throw. */

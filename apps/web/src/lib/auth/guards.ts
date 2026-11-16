@@ -48,12 +48,48 @@ export interface MerchantContext {
   storeUrl: string;
 }
 
+/** The store being managed: the switcher cookie's store, else the first one; null if none. */
+export const getActiveStore = cache(async (): Promise<StoreMembershipDto | null> => {
+  const stores = await getMyStores();
+  const preferred = (await cookies()).get(ACTIVE_STORE_COOKIE)?.value;
+  return stores.find((s) => s.id === preferred) ?? stores[0] ?? null;
+});
+
+export interface OnboardingContext {
+  user: SessionUserDto;
+  /** Null until step 1 creates the store. */
+  store: StoreMembershipDto | null;
+  /** Furthest step the merchant may open (1 before the store exists). */
+  reached: number;
+}
+
+/**
+ * Onboarding step `step` (1-based). Steps after 1 need the store; steps beyond the furthest one
+ * reached send the merchant to that one, so the flow can't be skipped by URL.
+ */
+export async function requireOnboardingStep(step: number): Promise<OnboardingContext> {
+  const user = await requireUser();
+  const store = await getActiveStore();
+  const reached = store ? store.onboardingStep : 1;
+  if (step > reached) redirect(ONBOARDING_PATHS[reached - 1] ?? '/onboarding');
+  return { user, store, reached };
+}
+
+/** Visible paths of the six onboarding steps, in order. */
+export const ONBOARDING_PATHS = [
+  '/onboarding',
+  '/onboarding/store',
+  '/onboarding/products',
+  '/onboarding/payments',
+  '/onboarding/delivery',
+  '/onboarding/publish',
+] as const;
+
 /** Signed-in merchant with at least one store; otherwise /login or /onboarding. */
 export const requireMerchant = cache(async (): Promise<MerchantContext> => {
   const user = await requireUser();
   const stores = await getMyStores();
-  const preferred = (await cookies()).get(ACTIVE_STORE_COOKIE)?.value;
-  const membership = stores.find((s) => s.id === preferred) ?? stores[0];
+  const membership = await getActiveStore();
   if (!membership) redirect('/onboarding');
 
   const [summary, storeUrl] = await Promise.all([

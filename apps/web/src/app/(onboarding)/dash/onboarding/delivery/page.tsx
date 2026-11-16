@@ -1,27 +1,41 @@
 import { formatKobo } from '@ojara/shared';
 import { Info, Pencil, Plus } from 'lucide-react';
 import type { Metadata } from 'next';
+import { ComingSoonNote } from '@/components/onboarding/coming-soon-note';
 import { OnbField, SectionToggle } from '@/components/onboarding/fields';
 import { OnboardingShell } from '@/components/onboarding/onboarding-shell';
 import { CheckoutOptions, PhonePreview } from '@/components/onboarding/phone-preview';
 import { Checkbox } from '@/components/ui/form-controls';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { requireOnboardingStep } from '@/lib/auth/guards';
+import { withStore } from '@/lib/onboarding/preview';
 import { DELIVERY_ZONES, PICKUP } from '@/mock/onboarding';
+import { continueFromDelivery } from '../actions';
 
 export const metadata: Metadata = { title: 'Set up your store · Delivery & pickup' };
 
 const th = 'text-[11px] font-semibold tracking-[0.6px] text-fg-subtle uppercase';
 
-/** 02.08 Onboarding 5 · Delivery & pickup (visual form). */
-export default function OnboardingDeliveryPage() {
+/** 02.08 Onboarding 5 · Delivery & pickup (visual form; saving arrives with the delivery feature). */
+export default async function OnboardingDeliveryPage() {
+  const { store, reached } = await requireOnboardingStep(5);
   return (
     <OnboardingShell
       step={5}
+      reached={reached}
+      store={store}
+      action={continueFromDelivery}
+      notice={
+        <ComingSoonNote>
+          Delivery zones and pickup can be saved soon. The zones below are examples — continue for
+          now.
+        </ComingSoonNote>
+      }
       title="How will customers get their orders?"
       subtitle="Customers see these options and charges at checkout, before they pay."
       preview={
-        <PhonePreview caption="What customers see at checkout">
+        <PhonePreview caption="What customers see at checkout" {...withStore(store)}>
           <CheckoutOptions />
         </PhonePreview>
       }

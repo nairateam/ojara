@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  decodeTenantHeader,
+  encodeTenantHeader,
   internalPath,
   loginPath,
   ROUTE_PREFIX,
@@ -43,6 +45,15 @@ describe('TenantCache', () => {
     logoPublicId: null,
     hostname: 'demo.ojara.localhost',
   };
+
+  it('caches stores that are not live for at most 10s, so publishing shows up quickly', () => {
+    let now = 0;
+    const cache = new TenantCache(60_000, 100, () => now);
+    cache.set('draft', { ...tenant, status: 'DRAFT' });
+    expect(cache.get('draft')?.status).toBe('DRAFT');
+    now = 11_000;
+    expect(cache.get('draft')).toBeUndefined();
+  });
 
   it('expires entries after the TTL and caches misses for at most 10s', () => {
     let now = 0;
@@ -115,5 +126,20 @@ describe('signedOutRedirect', () => {
 
   it('does not treat look-alike paths as public', () => {
     expect(signedOutRedirect(dash, '/login-help', '', false)).toBe('/login?next=%2Flogin-help');
+  });
+});
+
+describe('tenant header encoding', () => {
+  it('round-trips names outside Latin-1 as a valid header value', () => {
+    const tenant = { name: 'Ọjà Èkó 🛍️', hostname: 'oja.ojara.localhost' };
+    const value = encodeTenantHeader(tenant);
+    expect(() => new Headers({ 'x-test': value })).not.toThrow();
+    expect(decodeTenantHeader(value)).toEqual(tenant);
+  });
+
+  it('returns null for missing or malformed values', () => {
+    expect(decodeTenantHeader(null)).toBeNull();
+    expect(decodeTenantHeader('%E0%A4%A')).toBeNull();
+    expect(decodeTenantHeader('not json')).toBeNull();
   });
 });
