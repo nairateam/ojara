@@ -226,6 +226,27 @@ unless noted.
   sets it is not built yet. `/security` is in its own route group, outside the admin shell that
   redirects to it.
 
+- **Catalogue** (`apps/api/src/catalog`, dashboard Products and Categories):
+  - **Variants:**
+    - Every product has at least one variant, which holds its stock. A simple product has one
+      variant with no options.
+    - A product has up to 3 option groups (`products.options`, e.g. Size: S/M/L) and up to 100
+      variants. Each variant may override the product's price.
+  - **Saving** replaces the whole variant set:
+    - Variants are matched by option combination, so a size that survives keeps its id.
+    - Removed variants are deleted; order items keep their own snapshot, so past orders are
+      unaffected.
+    - SKUs are unique per store, and a clash returns `SKU_TAKEN`.
+  - **Plan rules:** these are enforced by the API and mirrored in the UI.
+    - The Free plan allows 20 products, not counting archived ones (`PLAN_LIMIT_REACHED`).
+      Restoring a product counts against the limit.
+    - Sale prices need Starter (`PLAN_FEATURE_LOCKED`, `PLANS[...].limits.promotions`).
+  - **Archiving:**
+    - An archived product stays archived when edited; only Restore brings it back, as a draft.
+    - Categories are archived rather than deleted. Their products keep the category and can still
+      be saved with it.
+  - **Not built yet:** menu order uses up/down buttons rather than drag-and-drop. Photos and
+    category covers wait for real Cloudinary keys. Collections have no model yet.
 - **Onboarding** (`app/(onboarding)/dash/onboarding`):
   - **Saving:** each step's Continue posts to a Server Action (`actions.ts`). It authenticates,
     takes the store from the session (never from the form), re-validates with the shared Zod

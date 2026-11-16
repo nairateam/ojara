@@ -78,30 +78,30 @@ internal prefix):
 
 ### 03 Merchant app (desktop) and 04 Merchant app (mobile) — `(dashboard)` on `app.`
 
-| Screen                               | Route                                            | Status   |
-| ------------------------------------ | ------------------------------------------------ | -------- |
-| 03.01 Dashboard                      | `/`                                              | UI built |
-| 03.02 Dashboard – Notifications Open | bell in the top bar (popover)                    | UI built |
-| 03.03 Orders                         | `/orders` (`?status=`, `?order=`, `?q=`)         | UI built |
-| 03.04 Products                       | `/products`                                      | UI built |
-| 03.05 Edit Product                   | `/products/[id]`, `/products/new`                | UI built |
-| 03.06 Inventory                      | `/inventory`                                     | UI built |
-| 03.07 Customers                      | `/customers` (`?customer=`)                      | UI built |
-| 03.08 Reports                        | `/reports`                                       | UI built |
-| 03.09 Categories                     | `/categories` (`?category=`)                     | UI built |
-| 03.10 Storefront Editor              | `/storefront` (`?device=mobile`)                 | UI built |
-| 03.11 Delivery                       | `/delivery`                                      | UI built |
-| 03.12 Payments                       | `/payments` (`?tab=payouts`, `?tab=refunds`)     | UI built |
-| 03.13 Domains                        | `/domains`                                       | UI built |
-| 03.14 Help & Support                 | `/help`                                          | UI built |
-| 03.15 Settings – Store Details       | `/settings`                                      | UI built |
-| 03.16 Settings – Plan & Billing      | `/settings/billing`                              | UI built |
-| 03.17 Settings – Staff               | `/settings/staff`                                | UI built |
-| 03.18 Settings – Notifications       | `/settings/notifications`                        | UI built |
-| 03.19 Settings – Policies            | `/settings/policies` (`?policy=`)                | UI built |
-| 04.01 Home (mobile)                  | `/` (responsive; mobile header + bottom tab bar) | UI built |
-| 04.02 Orders (mobile)                | `/orders` (responsive cards)                     | UI built |
-| 04.03 Order Detail (mobile)          | `/orders/[id]` (two-column on desktop)           | UI built |
+| Screen                               | Route                                            | Status                                                                                                                                                 |
+| ------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 03.01 Dashboard                      | `/`                                              | UI built                                                                                                                                               |
+| 03.02 Dashboard – Notifications Open | bell in the top bar (popover)                    | UI built                                                                                                                                               |
+| 03.03 Orders                         | `/orders` (`?status=`, `?order=`, `?q=`)         | UI built                                                                                                                                               |
+| 03.04 Products                       | `/products`                                      | **Live**: tabs with counts, search (name/SKU), paging, plan usage; no photos yet                                                                       |
+| 03.05 Edit Product                   | `/products/[id]`, `/products/new`                | **Live**: details, prices, options → variants (stock/price/SKU/on-off), status, category, inventory; archive/restore; photos and collections not built |
+| 03.06 Inventory                      | `/inventory`                                     | UI built                                                                                                                                               |
+| 03.07 Customers                      | `/customers` (`?customer=`)                      | UI built                                                                                                                                               |
+| 03.08 Reports                        | `/reports`                                       | UI built                                                                                                                                               |
+| 03.09 Categories                     | `/categories` (`?category=`)                     | **Live**: create/edit, menu on/off, order (up/down buttons, not drag), archive/restore, products list; cover images not built                          |
+| 03.10 Storefront Editor              | `/storefront` (`?device=mobile`)                 | UI built                                                                                                                                               |
+| 03.11 Delivery                       | `/delivery`                                      | UI built                                                                                                                                               |
+| 03.12 Payments                       | `/payments` (`?tab=payouts`, `?tab=refunds`)     | UI built                                                                                                                                               |
+| 03.13 Domains                        | `/domains`                                       | UI built                                                                                                                                               |
+| 03.14 Help & Support                 | `/help`                                          | UI built                                                                                                                                               |
+| 03.15 Settings – Store Details       | `/settings`                                      | UI built                                                                                                                                               |
+| 03.16 Settings – Plan & Billing      | `/settings/billing`                              | UI built                                                                                                                                               |
+| 03.17 Settings – Staff               | `/settings/staff`                                | UI built                                                                                                                                               |
+| 03.18 Settings – Notifications       | `/settings/notifications`                        | UI built                                                                                                                                               |
+| 03.19 Settings – Policies            | `/settings/policies` (`?policy=`)                | UI built                                                                                                                                               |
+| 04.01 Home (mobile)                  | `/` (responsive; mobile header + bottom tab bar) | UI built                                                                                                                                               |
+| 04.02 Orders (mobile)                | `/orders` (responsive cards)                     | UI built                                                                                                                                               |
+| 04.03 Order Detail (mobile)          | `/orders/[id]` (two-column on desktop)           | UI built                                                                                                                                               |
 
 ### 05 Storefront — `(storefront)` on `{slug}.` / custom domains
 

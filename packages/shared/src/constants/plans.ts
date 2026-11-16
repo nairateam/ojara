@@ -10,6 +10,8 @@ export interface PlanLimits {
   customDomain: boolean;
   staffAccounts: number;
   removeBranding: boolean;
+  /** Promotional (sale) prices on products. */
+  promotions: boolean;
 }
 
 export interface PlanDefinition {
@@ -37,6 +39,7 @@ export const PLANS: Record<PlanKey, PlanDefinition> = {
       customDomain: false,
       staffAccounts: 1,
       removeBranding: false,
+      promotions: false,
     },
   },
   STARTER: {
@@ -51,6 +54,7 @@ export const PLANS: Record<PlanKey, PlanDefinition> = {
       customDomain: true,
       staffAccounts: 1,
       removeBranding: true,
+      promotions: true,
     },
   },
   PROFESSIONAL: {
@@ -65,6 +69,7 @@ export const PLANS: Record<PlanKey, PlanDefinition> = {
       customDomain: true,
       staffAccounts: 5,
       removeBranding: true,
+      promotions: true,
     },
   },
 };

@@ -100,3 +100,8 @@ export const getAdminAccess = cache(async (): Promise<AdminAccess> => {
     throw err;
   }
 });
+
+/** Signed-in read for feature data (not memoised: pass what the page needs). */
+export function apiGet<S extends z.ZodType>(path: `/${string}`, schema: S) {
+  return signedInRequest(path, schema);
+}

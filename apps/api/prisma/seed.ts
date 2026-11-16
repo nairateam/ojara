@@ -156,10 +156,11 @@ async function main() {
         basePriceKobo: p.basePriceKobo,
         promoPriceKobo: p.promoPriceKobo ?? null,
         sku: p.sku,
+        options: p.sizes.length ? [{ name: 'Size', values: p.sizes }] : [],
       },
     });
-    const variants = p.sizes.length ? p.sizes : [null];
-    for (const size of variants) {
+    const variants: (string | null)[] = p.sizes.length ? p.sizes : [null];
+    for (const [position, size] of variants.entries()) {
       const sku = size ? `${p.sku}-${size}` : `${p.sku}-OS`;
       await prisma.productVariant.upsert({
         where: { storeId_sku: { storeId: store.id, sku } },
@@ -168,7 +169,8 @@ async function main() {
           storeId: store.id,
           productId: product.id,
           sku,
-          options: size ? { size } : {},
+          options: size ? { Size: size } : {},
+          position,
           stockQuantity: 12,
         },
       });

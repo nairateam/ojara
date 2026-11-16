@@ -331,14 +331,17 @@ model Subscription {
 // ───────────────────────────── Catalogue ─────────────────────────────
 
 model Category {
-  id         String    @id @default(uuid(7))
-  storeId    String
-  name       String
-  slug       String
-  position   Int       @default(0)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  archivedAt DateTime?
+  id          String    @id @default(uuid(7))
+  storeId     String
+  name        String
+  slug        String
+  description String?
+  /// Shown in the storefront's category menu.
+  showInMenu  Boolean   @default(true)
+  position    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  archivedAt  DateTime?
 
   store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   products Product[]
@@ -348,19 +351,26 @@ model Category {
 }
 
 model Product {
-  id             String        @id @default(uuid(7))
-  storeId        String
-  categoryId     String?
-  name           String
-  slug           String
-  description    String?
-  status         ProductStatus @default(DRAFT)
-  basePriceKobo  Int
-  promoPriceKobo Int?
-  sku            String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  archivedAt     DateTime?
+  id                String        @id @default(uuid(7))
+  storeId           String
+  categoryId        String?
+  name              String
+  slug              String
+  description       String?
+  status            ProductStatus @default(DRAFT)
+  basePriceKobo     Int
+  promoPriceKobo    Int?
+  /// What the merchant paid per item (for margin; never shown to customers).
+  costKobo          Int?
+  sku               String?
+  /// Option groups that variants are built from, e.g. [{ "name": "Size", "values": ["S", "M"] }].
+  options           Json          @default("[]")
+  trackStock        Boolean       @default(true)
+  sellWhenSoldOut   Boolean       @default(false)
+  lowStockThreshold Int           @default(3)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  archivedAt        DateTime?
 
   store    Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
   category Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -384,6 +394,9 @@ model ProductVariant {
   /// Overrides the product base price when set.
   priceKobo     Int?
   stockQuantity Int      @default(0)
+  /// Off = hidden from the storefront (e.g. a size you no longer make).
+  isActive      Boolean  @default(true)
+  position      Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

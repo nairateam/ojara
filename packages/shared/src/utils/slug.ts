@@ -26,3 +26,17 @@ export function numberedSlug(base: string, n: number): string {
   const suffix = `-${n}`;
   return `${base.slice(0, MAX_SLUG - suffix.length).replace(/-+$/, '')}${suffix}`;
 }
+
+/** URL slug from any text ("Adire Wrap Dress!" -> "adire-wrap-dress"); "item" if nothing is left. */
+export function slugify(text: string, maxLength = 80): string {
+  const slug = text
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, maxLength)
+    .replace(/-+$/, '');
+  return slug || 'item';
+}

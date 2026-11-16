@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 import type * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
@@ -67,17 +68,32 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
 }
 
 /** Pagination footer: "Showing 1–10 of 86 orders" + Previous / Next. */
+/** Table footer. With `previousHref` / `nextHref` the buttons are links (server-side paging). */
 function TablePagination({
   summary,
   hasPrevious,
   hasNext,
+  previousHref,
+  nextHref,
   className,
 }: {
   summary: string;
   hasPrevious: boolean;
   hasNext: boolean;
+  previousHref?: string | undefined;
+  nextHref?: string | undefined;
   className?: string;
 }) {
+  const pageButton = (enabled: boolean, href: string | undefined, children: React.ReactNode) =>
+    enabled && href ? (
+      <Button variant="secondary" size="sm" asChild>
+        <Link href={href}>{children}</Link>
+      </Button>
+    ) : (
+      <Button variant="secondary" size="sm" disabled={!enabled}>
+        {children}
+      </Button>
+    );
   return (
     <div
       className={cn(
@@ -87,12 +103,20 @@ function TablePagination({
     >
       <span className="text-ui text-fg-muted">{summary}</span>
       <div className="flex gap-2">
-        <Button variant="secondary" size="sm" disabled={!hasPrevious}>
-          <ChevronLeft /> Previous
-        </Button>
-        <Button variant="secondary" size="sm" disabled={!hasNext}>
-          Next <ChevronRight />
-        </Button>
+        {pageButton(
+          hasPrevious,
+          previousHref,
+          <>
+            <ChevronLeft /> Previous
+          </>,
+        )}
+        {pageButton(
+          hasNext,
+          nextHref,
+          <>
+            Next <ChevronRight />
+          </>,
+        )}
       </div>
     </div>
   );

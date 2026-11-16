@@ -213,3 +213,4 @@ export const healthSchema = z.object({
   uptimeSeconds: z.number(),
 });
 export type HealthDto = z.infer<typeof healthSchema>;
+export * from './catalog.js';
