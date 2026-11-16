@@ -47,6 +47,7 @@ export interface VerifyTransactionResult {
   reference: string;
   status: 'success' | 'failed' | 'abandoned' | 'ongoing' | 'pending' | 'reversed';
   amountKobo: number;
+  currency: string;
   paidAt: string | null;
   raw: unknown;
 }
@@ -166,14 +167,51 @@ export class PaystackClient {
     });
   }
 
-  initializeTransaction(_input: InitializeTransactionInput): Promise<InitializeTransactionResult> {
-    // TODO(checkout): POST /transaction/initialize
-    return Promise.reject(new NotImplementedError('Paystack initializeTransaction'));
+  /**
+   * Starts a payment. With a subaccount, Paystack settles the sale to the merchant and the
+   * merchant bears Paystack's fee (`bearer: subaccount`); Ojara's share is the subaccount's
+   * percentage_charge.
+   */
+  async initializeTransaction(
+    input: InitializeTransactionInput,
+  ): Promise<InitializeTransactionResult> {
+    const data = await this.request<{
+      authorization_url: string;
+      access_code: string;
+      reference: string;
+    }>('POST', '/transaction/initialize', {
+      email: input.email,
+      amount: input.amountKobo,
+      currency: 'NGN',
+      reference: input.reference,
+      callback_url: input.callbackUrl,
+      ...(input.subaccount ? { subaccount: input.subaccount, bearer: 'subaccount' } : {}),
+      ...(input.metadata ? { metadata: input.metadata } : {}),
+    });
+    return {
+      authorizationUrl: data.authorization_url,
+      accessCode: data.access_code,
+      reference: data.reference,
+    };
   }
 
-  verifyTransaction(_reference: string): Promise<VerifyTransactionResult> {
-    // TODO(checkout): GET /transaction/verify/:reference (used by reconciliation, not as truth)
-    return Promise.reject(new NotImplementedError('Paystack verifyTransaction'));
+  /** Current state of a payment (reconciliation fallback; the webhook stays the source of truth). */
+  async verifyTransaction(reference: string): Promise<VerifyTransactionResult> {
+    const data = await this.request<{
+      reference: string;
+      status: VerifyTransactionResult['status'];
+      amount: number;
+      currency: string;
+      paid_at: string | null;
+    }>('GET', `/transaction/verify/${encodeURIComponent(reference)}`);
+    return {
+      reference: data.reference,
+      status: data.status,
+      amountKobo: data.amount,
+      currency: data.currency,
+      paidAt: data.paid_at,
+      raw: data,
+    };
   }
 
   createPlan(_input: CreatePlanInput): Promise<{ planCode: string }> {

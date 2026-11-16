@@ -1,15 +1,35 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
+import { z } from 'zod';
+import { PaymentConfirmationService } from '../checkout/payment-confirmation.service.js';
 import { WORKER_OPTIONS } from '../common/queue/worker-options.js';
 import { PrismaService } from '../database/prisma.service.js';
 import { PAYMENTS_QUEUE, type PaymentWebhookJob } from './payments.service.js';
 
+const chargeSchema = z.object({
+  event: z.string(),
+  data: z.looseObject({
+    reference: z.string(),
+    status: z.string(),
+    amount: z.number().int(),
+    currency: z.string(),
+    paid_at: z.string().nullish(),
+  }),
+});
+
+/**
+ * Processes stored Paystack webhooks. THE WEBHOOK, NOT THE BROWSER REDIRECT, IS THE SOURCE OF
+ * TRUTH FOR PAYMENT STATUS. Each event is processed once (WebhookEvent.processedAt).
+ */
 @Processor(PAYMENTS_QUEUE, WORKER_OPTIONS)
 export class PaymentsProcessor extends WorkerHost {
   private readonly logger = new Logger(PaymentsProcessor.name);
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly confirmation: PaymentConfirmationService,
+  ) {
     super();
   }
 
@@ -19,19 +39,29 @@ export class PaymentsProcessor extends WorkerHost {
     });
     if (!event || event.processedAt) return;
 
-    // TODO(checkout): THE WEBHOOK, NOT THE BROWSER REDIRECT, IS THE SOURCE OF TRUTH FOR PAYMENT STATUS.
-    //  1. Look up Payment by data.reference (TenantContext.runAsSystem, then runForStore(payment.storeId)).
-    //  2. Re-verify amount + currency against the Payment row (never trust the payload amount alone).
-    //  3. charge.success -> Payment PAID + Order.paymentStatus PAID (in one tenantTransaction),
-    //     enqueue order-confirmation email; charge.failed -> FAILED; refund.processed -> REFUNDED.
-    //  4. Subscription events (subscription.create / invoice.payment_failed) -> billing module.
-    this.logger.log(
-      `Received Paystack ${event.eventType} (${event.eventId}); processing not implemented yet`,
-    );
+    if (event.eventType === 'charge.success') {
+      const parsed = chargeSchema.safeParse(event.payload);
+      if (!parsed.success) {
+        this.logger.warn(`Malformed charge.success payload (${event.eventId})`);
+      } else {
+        const d = parsed.data.data;
+        const outcome = await this.confirmation.confirm(d.reference, {
+          status: d.status === 'success' ? 'success' : 'pending',
+          amountKobo: d.amount,
+          currency: d.currency,
+          paidAt: d.paid_at ?? null,
+          raw: event.payload,
+        });
+        this.logger.log(`charge.success ${d.reference}: ${outcome}`);
+      }
+    } else {
+      // Refunds and subscription events arrive with those features.
+      this.logger.log(`Paystack ${event.eventType} (${event.eventId}) recorded; not handled yet`);
+    }
 
     await this.prisma.db.webhookEvent.update({
       where: { id: event.id },
-      data: { processedAt: new Date() },
+      data: { processedAt: new Date(), error: null },
     });
   }
 }

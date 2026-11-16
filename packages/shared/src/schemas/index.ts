@@ -8,6 +8,7 @@ import {
   STORE_CATEGORY_IDS,
 } from '../constants/onboarding.js';
 import { PLAN_KEYS } from '../constants/plans.js';
+import { nigerianPhoneSchema } from './phone.js';
 import { PLATFORM_ROLES, STORE_ROLES, STORE_STATUSES } from '../constants/statuses.js';
 
 /** Consistent error body returned by the API's global exception filter. */
@@ -29,28 +30,6 @@ export const storeSlugSchema = z
   .toLowerCase()
   .regex(STORE_SLUG_PATTERN, 'Use 3-40 lowercase letters, numbers or single hyphens')
   .refine((slug) => !isReservedSlug(slug), { message: 'This store address is reserved' });
-
-/**
- * Nigerian mobile number in any common form ("0803 555 0144", "803 555 0144", "+234 803…"),
- * normalised to E.164: "+2348035550144".
- */
-export const nigerianPhoneSchema = z
-  .string()
-  .trim()
-  .transform((value, ctx) => {
-    let digits = value.replace(/[\s()-]/g, '').replace(/^\+/, '');
-    if (!/^\d+$/.test(digits)) digits = '';
-    if (digits.startsWith('234')) digits = digits.slice(3);
-    if (digits.startsWith('0')) digits = digits.slice(1);
-    if (!/^[789]\d{9}$/.test(digits)) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Enter a Nigerian mobile number, e.g. 803 555 0144',
-      });
-      return z.NEVER;
-    }
-    return `+234${digits}`;
-  });
 
 /** Instagram username without the "@"; blank becomes null. */
 export const instagramHandleSchema = z
@@ -217,3 +196,5 @@ export * from './catalog.js';
 export * from './storefront.js';
 export * from './payouts.js';
 export * from './delivery.js';
+export * from './phone.js';
+export * from './orders.js';

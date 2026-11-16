@@ -44,3 +44,21 @@ export function todayLabel(now: Date = new Date()): string {
     timeZone: LAGOS,
   }).format(now);
 }
+
+/** "16 Nov, 2:14 pm" in Lagos time. */
+export function formatOrderTime(iso: string): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: LAGOS,
+  }).format(new Date(iso));
+}
+
+/** "Today" / "Earlier" bucket for an order list, by the Lagos calendar day. */
+export function isTodayInLagos(iso: string, now: Date = new Date()): boolean {
+  const day = new Intl.DateTimeFormat('en-CA', { timeZone: LAGOS });
+  return day.format(new Date(iso)) === day.format(now);
+}

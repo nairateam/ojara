@@ -123,3 +123,24 @@ export async function apiPublicGet<S extends z.ZodType>(path: `/${string}`, sche
     signal: AbortSignal.timeout(5_000),
   });
 }
+
+/** Server-to-server write for shoppers (no cookies), e.g. checkout. Forwards the shopper's IP. */
+export async function apiPublicPost<S extends z.ZodType>(
+  path: `/${string}`,
+  schema: S,
+  body: unknown,
+) {
+  const h = await headers();
+  return apiRequest({
+    baseUrl: serverEnv().API_INTERNAL_URL,
+    path,
+    schema,
+    method: 'POST',
+    body,
+    headers: {
+      'x-internal-token': serverEnv().INTERNAL_API_TOKEN,
+      'x-ojara-forwarded-for': clientIp(h),
+    },
+    signal: AbortSignal.timeout(20_000),
+  });
+}

@@ -128,15 +128,17 @@ export class StorefrontService {
           instagramHandle: true,
           contactEmail: true,
           state: true,
+          paystackSubaccountCode: true,
           plan: { select: { key: true } },
         },
       });
       const products = await this.publishedProducts(tx, storeId);
       const categories = await this.menuCategories(tx, storeId, products);
-      const { plan, ...rest } = store;
+      const { plan, paystackSubaccountCode, ...rest } = store;
       return {
         ...rest,
         removeBranding: PLANS[plan.key].limits.removeBranding,
+        acceptsPayments: Boolean(paystackSubaccountCode),
         categories: categories.map(({ id: _id, ...c }) => c),
         productCount: products.length,
         delivery: await this.delivery.forStorefront(tx, storeId),

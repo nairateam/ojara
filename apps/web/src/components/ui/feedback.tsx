@@ -1,4 +1,4 @@
-import { Check, CircleX, Info, type LucideIcon, TriangleAlert } from 'lucide-react';
+import { Check, CircleX, Info, type LucideIcon, TriangleAlert, X } from 'lucide-react';
 import type * as React from 'react';
 import { cn } from '@/lib/utils';
 
@@ -77,11 +77,13 @@ export function Toast({
   title,
   body,
   action,
+  tone = 'success',
   className,
 }: {
   title: string;
   body?: string;
   action?: React.ReactNode;
+  tone?: 'success' | 'danger';
   className?: string;
 }) {
   return (
@@ -92,8 +94,17 @@ export function Toast({
         className,
       )}
     >
-      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success">
-        <Check className="size-3.5 text-white" aria-hidden />
+      <span
+        className={cn(
+          'flex size-6 shrink-0 items-center justify-center rounded-full',
+          tone === 'danger' ? 'bg-danger' : 'bg-success',
+        )}
+      >
+        {tone === 'danger' ? (
+          <X className="size-3.5 text-white" aria-hidden />
+        ) : (
+          <Check className="size-3.5 text-white" aria-hidden />
+        )}
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-ui font-semibold text-surface">{title}</span>

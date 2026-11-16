@@ -17,13 +17,41 @@ describe('renderEmail', () => {
       dashboardUrl: 'https://app.ojara.store',
     });
     expect(welcome.text).toMatch(/welcome to ojara, ada/i);
+    const lines = [
+      { name: 'Adire Wrap Dress', detail: 'M', quantity: 2, totalFormatted: '₦37,000' },
+    ];
+    const totals = {
+      subtotalFormatted: '₦37,000',
+      deliveryFormatted: '₦2,000',
+      totalFormatted: '₦39,000',
+    };
     const order = await renderEmail('order-confirmation', {
       storeName: 'Adunni Threads',
       customerName: 'Tolu',
       orderNumber: '#1042',
-      totalFormatted: '₦42,500',
+      lines,
+      ...totals,
+      fulfilment: 'Pickup at 12 Market Road.',
+      storeNote: null,
+      storeContact: 'WhatsApp +234 803 555 0144',
     });
     expect(order.text).toContain('#1042');
+    expect(order.text).toContain('2 × Adire Wrap Dress');
+    expect(order.text).toContain('₦39,000');
+    expect(order.text).toContain('WhatsApp +234 803 555 0144');
+
+    const merchant = await renderEmail('new-order', {
+      storeName: 'Adunni Threads',
+      orderNumber: '#1042',
+      customerName: 'Tolu',
+      customerPhone: '+2348035550144',
+      lines,
+      ...totals,
+      fulfilment: 'Pickup',
+      orderUrl: 'https://app.ojara.store/orders/o1',
+    });
+    expect(merchant.text).toMatch(/new order #1042/i);
+    expect(merchant.text).toContain('https://app.ojara.store/orders/o1');
   });
 });
 

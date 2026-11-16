@@ -29,6 +29,8 @@ export const storefrontStoreSchema = z.object({
   /** Categories shown in the store menu, in menu order. */
   categories: z.array(storefrontCategorySchema),
   productCount: z.number().int(),
+  /** The store has a payout account, so shoppers can pay online at checkout. */
+  acceptsPayments: z.boolean(),
   /** Delivery zones and pickup offered at checkout. */
   delivery: storefrontDeliverySchema,
 });

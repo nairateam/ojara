@@ -1,16 +1,16 @@
-import { FULFILMENT_STATUSES, type FulfilmentStatus, formatKobo } from '@ojara/shared';
-import { Download, ShoppingBag } from 'lucide-react';
+import { formatKobo, ORDER_TABS, type OrderListItemDto, type OrderTab } from '@ojara/shared';
+import { ShoppingBag } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { EmptyState } from '@/components/app/empty-state';
 import { SplitPage } from '@/components/app/page-container';
 import { PageHeader } from '@/components/app/page-header';
-import { FilterButton, SearchField } from '@/components/dashboard/filters';
-import { LinkTabs, StatusChips, type LinkTab } from '@/components/dashboard/link-tabs';
+import { SearchField } from '@/components/dashboard/filters';
+import { formatOrderTime, isTodayInLagos } from '@/components/dashboard/format';
+import { type LinkTab, LinkTabs, StatusChips } from '@/components/dashboard/link-tabs';
 import { OrderPanel } from '@/components/dashboard/order-detail';
 import { FulfilmentBadge, PaymentBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/form-controls';
 import {
   Table,
   TableBody,
@@ -20,124 +20,133 @@ import {
   TablePagination,
   TableRow,
 } from '@/components/ui/table';
+import { getOrder, listOrders } from '@/lib/api/orders';
 import { requireMerchant } from '@/lib/auth/guards';
 import { cn } from '@/lib/utils';
-import { type MockOrder, ORDER_STATUS_COUNTS, ORDERS, findOrder } from '@/mock/dashboard';
 
 export const metadata: Metadata = { title: 'Orders' };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-const DEFAULT_SELECTED = 'OJ-1047';
+const PAGE_SIZE = 25;
+
+const TAB_LABELS: Record<OrderTab, string> = {
+  ALL: 'All',
+  UNPAID: 'Unpaid',
+  TO_FULFIL: 'To fulfil',
+  SHIPPED: 'Shipped',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+};
 
 function param(v: string | string[] | undefined) {
   return Array.isArray(v) ? v[0] : v;
 }
 
-function href(params: { status?: string; order?: string; q?: string }) {
+function href(params: { tab?: string; order?: string; q?: string; page?: number }) {
   const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) if (v) sp.set(k, v);
+  if (params.tab && params.tab !== 'ALL') sp.set('tab', params.tab.toLowerCase());
+  if (params.q) sp.set('q', params.q);
+  if (params.page && params.page > 1) sp.set('page', String(params.page));
+  if (params.order) sp.set('order', params.order);
   const s = sp.toString();
   return s ? `/orders?${s}` : '/orders';
 }
 
-function filterOrders(status: FulfilmentStatus | undefined, q: string | undefined) {
-  const query = q?.trim().toLowerCase();
-  return ORDERS.filter((o) => {
-    if (status && o.fulfilment !== status) return false;
-    if (!query) return true;
-    return (
-      o.number.toLowerCase().includes(query) ||
-      o.customer.toLowerCase().includes(query) ||
-      o.place.toLowerCase().includes(query)
-    );
-  });
+function itemCount(o: OrderListItemDto) {
+  return `${o.itemCount} item${o.itemCount === 1 ? '' : 's'}`;
 }
 
-/** 04.02 order card: name + meta, total, badges, place. Selected card has a 1.5px forest ring. */
-function OrderCard({ order, selected }: { order: MockOrder; selected: boolean }) {
-  const items = order.items.reduce((n, i) => n + i.quantity, 0);
+/** 04.02 order card: name + meta, total, badges. */
+function OrderCard({ order }: { order: OrderListItemDto }) {
   return (
     <Link
       href={`/orders/${order.id}`}
-      className={cn(
-        'flex flex-col gap-2.5 rounded-lg bg-surface p-3.5',
-        selected ? 'border-[1.5px] border-forest' : 'border border-line',
-      )}
+      className="flex flex-col gap-2.5 rounded-lg border border-line bg-surface p-3.5"
     >
       <span className="flex items-start justify-between gap-3">
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="truncate text-[15px]/[21px] font-semibold">{order.customer}</span>
+          <span className="truncate text-[15px]/[21px] font-semibold">
+            {order.customerName ?? 'Customer'}
+          </span>
           <span className="text-xs text-fg-muted">
-            {order.number} · {order.placedShort} · {items} item{items === 1 ? '' : 's'}
+            #{order.number} · {formatOrderTime(order.createdAt)} · {itemCount(order)}
           </span>
         </span>
         <span className="text-[15px]/[21px] font-bold">{formatKobo(order.totalKobo)}</span>
       </span>
       <span className="flex items-center gap-2">
-        <PaymentBadge status={order.payment} />
-        <FulfilmentBadge status={order.fulfilment} />
-        <span className="ml-auto truncate text-xs text-fg-subtle">{order.placeShort}</span>
+        <PaymentBadge status={order.paymentStatus} />
+        <FulfilmentBadge status={order.fulfilmentStatus} />
+        <span className="ml-auto truncate text-xs text-fg-subtle">
+          {order.isPickup ? 'Pickup' : 'Delivery'}
+        </span>
       </span>
     </Link>
   );
 }
 
-/** 03.03 Orders (desktop: tabs, filters, table + right detail panel) and 04.02 (mobile cards). */
+/** 03.03 Orders (desktop: tabs, search, table + right detail panel) and 04.02 (mobile cards). */
 export default async function OrdersPage({ searchParams }: { searchParams: SearchParams }) {
-  const { summary } = await requireMerchant();
+  const { membership, summary } = await requireMerchant();
   const sp = await searchParams;
-  const statusParam = param(sp.status)?.toUpperCase();
-  const status = FULFILMENT_STATUSES.find((s) => s === statusParam);
-  const q = param(sp.q);
+  const tabParam = param(sp.tab)?.toUpperCase();
+  const tab = ORDER_TABS.find((t) => t === tabParam) ?? 'ALL';
+  const q = param(sp.q)?.trim() || undefined;
+  const page = Math.max(1, Number.parseInt(param(sp.page) ?? '1', 10) || 1);
   const orderParam = param(sp.order);
 
-  const orders = filterOrders(status, q);
-  const selectedId = orderParam === 'none' ? undefined : (orderParam ?? DEFAULT_SELECTED);
-  const selected = selectedId ? findOrder(selectedId) : undefined;
-  const statusKey = status ?? 'ALL';
-  const total = ORDER_STATUS_COUNTS.find((t) => t.key === statusKey)?.count ?? orders.length;
-  const statusLabel = ORDER_STATUS_COUNTS.find((t) => t.key === statusKey)?.label ?? 'All';
+  const [list, selected] = await Promise.all([
+    listOrders(membership.id, { tab, q, page, pageSize: PAGE_SIZE }),
+    orderParam ? getOrder(membership.id, orderParam) : Promise.resolve(null),
+  ]);
+  const orders = list.items;
+  const keep = { tab, q };
 
-  const tabs: LinkTab[] = ORDER_STATUS_COUNTS.map((t) => ({
-    key: t.key,
-    label: t.label,
-    count: t.count,
-    href: href({ status: t.key === 'ALL' ? undefined : t.key.toLowerCase(), order: orderParam }),
+  const tabs: LinkTab[] = ORDER_TABS.map((t) => ({
+    key: t,
+    label: TAB_LABELS[t],
+    count: list.counts[t],
+    href: href({ tab: t }),
   }));
-  const keep = { status: status?.toLowerCase(), q };
 
-  const today = orders.filter((o) => o.group === 'today');
-  const earlier = orders.filter((o) => o.group === 'earlier');
+  const today = orders.filter((o) => isTodayInLagos(o.createdAt));
+  const earlier = orders.filter((o) => !isTodayInLagos(o.createdAt));
+  const first = (page - 1) * PAGE_SIZE + 1;
+  const last = first + orders.length - 1;
 
   const empty = (
     <EmptyState
       icon={ShoppingBag}
-      title={q ? `No orders match “${q}”` : `No ${statusLabel.toLowerCase()} orders`}
+      title={
+        q
+          ? `No orders match “${q}”`
+          : tab === 'ALL'
+            ? 'No orders yet'
+            : `No ${TAB_LABELS[tab].toLowerCase()} orders`
+      }
       body={
         q
-          ? 'Try an order number like OJ-1047, a customer name or a phone number.'
+          ? 'Try an order number like 1047, a customer name or a phone number.'
           : 'Orders show up here as soon as a customer checks out on your store.'
       }
       action={
-        <Button variant="secondary" asChild>
-          <Link href="/orders">Show all orders</Link>
-        </Button>
+        q || tab !== 'ALL' ? (
+          <Button variant="secondary" asChild>
+            <Link href="/orders">Show all orders</Link>
+          </Button>
+        ) : undefined
       }
     />
   );
 
   return (
     <SplitPage
-      panel={
-        selected ? (
-          <OrderPanel order={selected} closeHref={href({ ...keep, order: 'none' })} />
-        ) : null
-      }
+      panel={selected ? <OrderPanel order={selected} closeHref={href({ ...keep, page })} /> : null}
     >
       {/* Mobile (04.02): status chips + grouped cards. */}
       <div className="-mx-4 -mt-[18px] flex flex-col gap-3 lg:hidden">
-        <StatusChips tabs={tabs} active={statusKey} />
+        <StatusChips tabs={tabs} active={tab} />
         <div className="flex flex-col gap-2.5 px-4">
           {orders.length === 0 ? empty : null}
           {[
@@ -150,11 +159,16 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
                   {g.label}
                 </h2>
                 {g.list.map((o) => (
-                  <OrderCard key={o.id} order={o} selected={o.id === selected?.id} />
+                  <OrderCard key={o.id} order={o} />
                 ))}
               </section>
             ) : null,
           )}
+          {list.total > page * PAGE_SIZE ? (
+            <Button variant="secondary" asChild>
+              <Link href={href({ ...keep, page: page + 1 })}>Load more</Link>
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -162,24 +176,18 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
       <PageHeader
         className="hidden lg:flex"
         title="Orders"
-        subtitle={`86 orders in the last 30 days · ${summary.openOrders} waiting on you`}
-        actions={
-          <Button variant="secondary">
-            <Download /> Export
-          </Button>
-        }
+        subtitle={`${list.counts.ALL} order${list.counts.ALL === 1 ? '' : 's'} · ${
+          summary.openOrders
+        } waiting on you`}
       />
-      <LinkTabs tabs={tabs} active={statusKey} label="Order status" className="hidden lg:flex" />
+      <LinkTabs tabs={tabs} active={tab} label="Order status" className="hidden lg:flex" />
       <div className="hidden flex-wrap gap-2 lg:flex">
         <SearchField
           placeholder="Order number, customer or phone"
           defaultValue={q}
-          hidden={{ status: keep.status }}
+          hidden={{ tab: tab === 'ALL' ? undefined : tab.toLowerCase() }}
           className="min-w-[220px] flex-1"
         />
-        <FilterButton label="Payment: Any" />
-        <FilterButton label="Delivery: Any" />
-        <FilterButton label="Last 30 days" />
       </div>
       <div className="hidden lg:block">
         {orders.length === 0 ? (
@@ -188,10 +196,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[38px] pr-0 pl-[18px]">
-                  <Checkbox aria-label="Select all orders" />
-                </TableHead>
-                <TableHead className="pl-2.5">Order</TableHead>
+                <TableHead className="pl-[18px]">Order</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Payment</TableHead>
@@ -201,51 +206,49 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
             <TableBody>
               {orders.map((o) => {
                 const isSelected = o.id === selected?.id;
-                const items = o.items.reduce((n, i) => n + i.quantity, 0);
                 return (
                   <TableRow key={o.id} data-state={isSelected ? 'selected' : undefined}>
-                    <TableCell className="pr-0 pl-[18px]">
-                      <Checkbox aria-label={`Select ${o.number}`} defaultChecked={isSelected} />
-                    </TableCell>
-                    <TableCell className="pl-2.5">
+                    <TableCell className="pl-[18px]">
                       <span className="flex flex-col gap-0.5">
                         <Link
-                          href={href({ ...keep, order: o.id })}
+                          href={href({ ...keep, page, order: o.id })}
                           scroll={false}
                           className="hidden text-sm font-semibold hover:underline xl:inline"
                         >
-                          {o.number}
+                          #{o.number}
                         </Link>
                         <Link
                           href={`/orders/${o.id}`}
                           className="text-sm font-semibold hover:underline xl:hidden"
                         >
-                          {o.number}
+                          #{o.number}
                         </Link>
-                        <span className="text-xs whitespace-nowrap text-fg-subtle">{o.placed}</span>
+                        <span className="text-xs whitespace-nowrap text-fg-subtle">
+                          {formatOrderTime(o.createdAt)}
+                        </span>
                       </span>
                     </TableCell>
                     <TableCell>
                       <span className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium whitespace-nowrap">{o.customer}</span>
+                        <span className="text-sm font-medium whitespace-nowrap">
+                          {o.customerName ?? 'Customer'}
+                        </span>
                         <span className="text-xs whitespace-nowrap text-fg-muted">
-                          {o.method} · {o.place}
+                          {o.isPickup ? 'Pickup' : 'Delivery'}
                         </span>
                       </span>
                     </TableCell>
                     <TableCell>
                       <span className="flex flex-col gap-0.5">
                         <span className="text-sm font-semibold">{formatKobo(o.totalKobo)}</span>
-                        <span className="text-xs text-fg-subtle">
-                          {items} item{items === 1 ? '' : 's'}
-                        </span>
+                        <span className="text-xs text-fg-subtle">{itemCount(o)}</span>
                       </span>
                     </TableCell>
                     <TableCell>
-                      <PaymentBadge status={o.payment} />
+                      <PaymentBadge status={o.paymentStatus} />
                     </TableCell>
                     <TableCell>
-                      <FulfilmentBadge status={o.fulfilment} />
+                      <FulfilmentBadge status={o.fulfilmentStatus} />
                     </TableCell>
                   </TableRow>
                 );
@@ -253,11 +256,13 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
             </TableBody>
             <tfoot>
               <tr>
-                <td colSpan={6} className="p-0">
+                <td colSpan={5} className={cn('p-0')}>
                   <TablePagination
-                    summary={`Showing 1–${orders.length} of ${total} orders`}
-                    hasPrevious={false}
-                    hasNext={orders.length < total}
+                    summary={`Showing ${first}–${last} of ${list.total} orders`}
+                    hasPrevious={page > 1}
+                    hasNext={list.total > page * PAGE_SIZE}
+                    previousHref={page > 1 ? href({ ...keep, page: page - 1 }) : undefined}
+                    nextHref={href({ ...keep, page: page + 1 })}
                   />
                 </td>
               </tr>

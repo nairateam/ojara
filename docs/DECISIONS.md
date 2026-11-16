@@ -204,6 +204,22 @@ unless noted.
   event is re-enqueued, so an event stored while Redis was down still gets processed.
   **The webhook, not the browser redirect, is the source of truth for payment status.**
 - Paystack has no top-level event id; `event:data.id` (or reference) is used.
+- **Checkout** (`POST /v1/internal/storefront/:storeId/checkout`, internal token): the API re-prices
+  every line, checks the delivery zone / pickup and free-delivery threshold, and refuses with
+  `CART_CHANGED` unless the total equals `expectedTotalKobo` (what the shopper saw). Stores without
+  a Paystack subaccount get 409 `PAYMENTS_UNAVAILABLE`, and the storefront keeps WhatsApp ordering
+  (`canCheckout`: subaccount + at least one zone or pickup). Order numbers come from
+  `stores.lastOrderNumber` (per store, from 1001); references are `ojr_<20 hex>`.
+- Paystack initialize uses the store's subaccount with `bearer: 'subaccount'`; the return URL is
+  `/checkout/confirmed?reference=…`. **Stock is decremented when payment is confirmed, not when
+  the order is placed** (unpaid orders don't hold stock; a rare oversell is resolved by the merchant).
+- Payment confirmation is idempotent (`PaymentConfirmationService.confirm`): amount and currency
+  must match or the payment is logged as a mismatch and not marked paid. Paths: webhook
+  `charge.success`; the confirmed page asking for a payment still PENDING after 5 s; and a cron
+  every 10 min for PENDING payments between 10 min and 2 days old. Paid orders queue the customer
+  confirmation and the merchant "new order" emails (idempotency keys per order).
+- Merchant fulfilment moves only along `nextStatuses` (unpaid: cancel only; paid: forward; no cancel
+  after shipped). Each change is audit-logged. Customers aren't notified of status changes yet.
 
 ### Web
 

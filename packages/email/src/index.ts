@@ -8,12 +8,15 @@ import {
   PasswordResetEmail,
   type PasswordResetEmailProps,
 } from './templates/password-reset-email.js';
+import { NewOrderEmail, type NewOrderEmailProps } from './templates/new-order-email.js';
 import { VerifyEmail, type VerifyEmailProps } from './templates/verify-email.js';
 import { WelcomeEmail, type WelcomeEmailProps } from './templates/welcome-email.js';
 
 export { emailTokens } from './tokens.js';
-export { OrderConfirmationEmail, PasswordResetEmail, VerifyEmail, WelcomeEmail };
+export type { EmailOrderLine } from './components/order-lines.js';
+export { NewOrderEmail, OrderConfirmationEmail, PasswordResetEmail, VerifyEmail, WelcomeEmail };
 export type {
+  NewOrderEmailProps,
   OrderConfirmationEmailProps,
   PasswordResetEmailProps,
   VerifyEmailProps,
@@ -26,6 +29,7 @@ export interface EmailTemplateProps {
   'verify-email': VerifyEmailProps;
   'password-reset': PasswordResetEmailProps;
   'order-confirmation': OrderConfirmationEmailProps;
+  'new-order': NewOrderEmailProps;
 }
 export type EmailTemplateName = keyof EmailTemplateProps;
 
@@ -34,6 +38,7 @@ const templates: { [K in EmailTemplateName]: ComponentType<EmailTemplateProps[K]
   'verify-email': VerifyEmail,
   'password-reset': PasswordResetEmail,
   'order-confirmation': OrderConfirmationEmail,
+  'new-order': NewOrderEmail,
 };
 
 export interface RenderedEmail {

@@ -1,33 +1,103 @@
-import { formatKobo } from '@ojara/shared';
-import {
-  Check,
-  Ellipsis,
-  Mail,
-  MapPin,
-  MessageCircle,
-  Phone,
-  Printer,
-  ShieldCheck,
-  X,
-} from 'lucide-react';
+import { formatKobo, type OrderDetailDto } from '@ojara/shared';
+import { Check, Mail, MapPin, MessageCircle, Phone, ShieldCheck, X } from 'lucide-react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { FulfilmentBadge, PaymentBadge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/feedback';
 import { DetailPanel, SectionLabel } from '@/components/ui/panels';
-import { PanelBlock } from './panel-block';
 import { cn } from '@/lib/utils';
-import { CUSTOMERS, type MockOrder, type OrderStep } from '@/mock/dashboard';
+import { formatOrderTime } from './format';
 import { OrderStatusAction } from './order-status-action';
+import { PanelBlock } from './panel-block';
 import { PaymentFailedNotice } from './system-states';
-import { Thumb } from './thumb';
+import { ProductThumb } from './thumb';
 
-export function customerFor(order: MockOrder) {
-  return CUSTOMERS.find((c) => c.id === order.customerId);
+export type OrderStep = { label: string; time?: string; state: 'done' | 'current' | 'todo' };
+
+export function orderTitle(order: { number: number }) {
+  return `#${order.number}`;
 }
 
-export function firstName(name: string) {
-  return name.split(/\s+/)[0] ?? name;
+export function customerLabel(order: OrderDetailDto) {
+  return order.customerName ?? order.customerPhone ?? 'Customer';
+}
+
+export function placedSentence(order: OrderDetailDto) {
+  const paid = order.payments.find((p) => p.status === 'PAID');
+  return `Placed ${formatOrderTime(order.createdAt)}${
+    paid?.paidAt ? ` · Paid ${formatOrderTime(paid.paidAt)}` : ''
+  } · ${order.isPickup ? 'Pickup' : 'Delivery'}`;
+}
+
+/** Plain-text address line for the order (delivery address or pickup point). */
+export function placeText(order: OrderDetailDto) {
+  if (order.isPickup) return order.pickupAddress ? `Pickup at ${order.pickupAddress}` : 'Pickup';
+  const a = order.deliveryAddress;
+  if (!a) return 'No address given';
+  return [a.line1, a.city, a.state].filter(Boolean).join(', ');
+}
+
+/** wa.me / tel: links from the customer's +234 number. */
+export function contactLinks(order: OrderDetailDto) {
+  const phone = order.customerPhone;
+  if (!phone) return { tel: undefined, whatsapp: undefined };
+  return { tel: `tel:${phone}`, whatsapp: `https://wa.me/${phone.replace(/\D/g, '')}` };
+}
+
+/** Whether the merchant has a next step to take on this order. */
+export function canAct(order: OrderDetailDto) {
+  return order.nextStatuses.length > 0;
+}
+
+const FLOW = ['PENDING', 'PROCESSING', 'READY_FOR_DISPATCH', 'SHIPPED', 'DELIVERED'] as const;
+
+/** Progress rail from the order's state (03.03): placed, paid, then the fulfilment steps. */
+export function orderSteps(order: OrderDetailDto): OrderStep[] {
+  const paid = order.payments.find((p) => p.status === 'PAID');
+  const steps: OrderStep[] = [
+    { label: 'Order placed', time: formatOrderTime(order.createdAt), state: 'done' },
+  ];
+  if (order.fulfilmentStatus === 'CANCELLED' || order.fulfilmentStatus === 'REFUNDED') {
+    if (paid)
+      steps.push({
+        label: 'Paid',
+        time: paid.paidAt ? formatOrderTime(paid.paidAt) : undefined,
+        state: 'done',
+      });
+    steps.push({
+      label: order.fulfilmentStatus === 'CANCELLED' ? 'Cancelled' : 'Refunded',
+      state: 'done',
+    });
+    return steps;
+  }
+  steps.push({
+    label: order.paymentStatus === 'PAID' ? 'Paid' : 'Waiting for payment',
+    time: paid?.paidAt ? formatOrderTime(paid.paidAt) : undefined,
+    state: order.paymentStatus === 'PAID' ? 'done' : 'current',
+  });
+  const flow = FLOW.filter((s) => !(order.isPickup && s === 'SHIPPED'));
+  const at = flow.indexOf(order.fulfilmentStatus);
+  const labels: Record<(typeof FLOW)[number], string> = {
+    PENDING: 'To fulfil',
+    PROCESSING: 'Processing',
+    READY_FOR_DISPATCH: order.isPickup ? 'Ready for pickup' : 'Ready for dispatch',
+    SHIPPED: 'Shipped',
+    DELIVERED: order.isPickup ? 'Picked up' : 'Delivered',
+  };
+  flow.slice(1).forEach((s, i) => {
+    const idx = i + 1;
+    steps.push({
+      label: labels[s],
+      state:
+        order.paymentStatus !== 'PAID'
+          ? 'todo'
+          : idx < at || (idx === at && s === 'DELIVERED')
+            ? 'done'
+            : idx === at
+              ? 'current'
+              : 'todo',
+    });
+  });
+  return steps;
 }
 
 /** Vertical progress rail (03.03): 18px markers, 1.5px lines; done = green check. */
@@ -79,39 +149,40 @@ export function OrderTimeline({ steps }: { steps: OrderStep[] }) {
 }
 
 /** Line items + subtotal/delivery/total + Paystack note (03.03 ITEMS section). */
-export function OrderItems({ order }: { order: MockOrder }) {
-  const subtotal = order.items.reduce((sum, i) => sum + i.unitKobo * i.quantity, 0);
+export function OrderItems({ order }: { order: OrderDetailDto }) {
+  const paid = order.payments.find((p) => p.status === 'PAID');
   return (
     <div className="flex flex-col gap-3.5">
       <ul className="flex flex-col gap-3.5">
-        {order.items.map((item) => (
-          <li key={`${item.name}-${item.variant}`} className="flex items-center gap-3">
-            <Thumb src={item.image} size={44} />
+        {order.items.map((item, i) => (
+          <li
+            key={`${item.name}-${item.variantLabel ?? ''}-${i}`}
+            className="flex items-center gap-3"
+          >
+            <ProductThumb publicId={item.imagePublicId} name={item.name} size={44} />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate text-[13px]/[19px] font-semibold">{item.name}</span>
               <span className="text-xs text-fg-muted">
-                {item.variant} · {item.quantity} × {formatKobo(item.unitKobo)}
+                {item.variantLabel ? `${item.variantLabel} · ` : ''}
+                {item.quantity} × {formatKobo(item.unitPriceKobo)}
+                {item.sku ? ` · ${item.sku}` : ''}
               </span>
             </span>
-            <span className="text-[13px]/[19px] font-medium">
-              {formatKobo(item.unitKobo * item.quantity)}
-            </span>
+            <span className="text-[13px]/[19px] font-medium">{formatKobo(item.lineTotalKobo)}</span>
           </li>
         ))}
       </ul>
       <div className="flex flex-col gap-2 border-t border-line pt-3 text-[13px]/[19px]">
         <div className="flex justify-between">
           <span className="text-fg-muted">Subtotal</span>
-          <span className="font-medium">{formatKobo(subtotal)}</span>
+          <span className="font-medium">{formatKobo(order.subtotalKobo)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-fg-muted">
-            {order.method === 'Pickup'
-              ? 'Pickup · Surulere studio'
-              : `Delivery · ${order.deliveryZone ?? order.place}`}
+            {order.isPickup ? 'Pickup' : `Delivery${order.zoneName ? ` · ${order.zoneName}` : ''}`}
           </span>
           <span className="font-medium">
-            {order.deliveryKobo ? formatKobo(order.deliveryKobo) : 'Free'}
+            {order.deliveryFeeKobo ? formatKobo(order.deliveryFeeKobo) : 'Free'}
           </span>
         </div>
         <div className="flex items-center justify-between">
@@ -119,137 +190,130 @@ export function OrderItems({ order }: { order: MockOrder }) {
           <span className="text-[15px]/[21px] font-bold">{formatKobo(order.totalKobo)}</span>
         </div>
       </div>
-      {order.paymentNote ? (
+      {paid ? (
         <p className="flex items-start gap-2.5 rounded-md bg-success-soft px-3 py-2.5 text-xs text-success">
           <ShieldCheck className="size-4 shrink-0" aria-hidden />
-          {order.paymentNote}
+          Paid via Paystack · ref {paid.reference}
         </p>
       ) : null}
     </div>
   );
 }
 
-/** Customer section: avatar, history line, contact rows, note, WhatsApp / Call. */
-export function OrderCustomer({ order }: { order: MockOrder }) {
-  const c = customerFor(order);
+/** Customer section: avatar, contact rows, address, note, WhatsApp / Call. */
+export function OrderCustomer({ order }: { order: OrderDetailDto }) {
+  const name = customerLabel(order);
+  const links = contactLinks(order);
+  const btn =
+    'inline-flex h-9 items-center justify-center gap-2 rounded-md border border-line bg-surface text-[13px]/[19px] font-semibold hover:bg-selected [&_svg]:size-4';
   return (
     <div className="flex flex-col gap-3.5">
       <div className="flex items-center gap-3">
-        <Avatar name={order.customer} size={34} className="size-9 text-xs" />
-        <span className="flex min-w-0 flex-col gap-0.5">
-          <Link
-            href={`/customers?customer=${order.customerId}`}
-            className="text-sm font-semibold hover:underline"
-          >
-            {order.customer}
-          </Link>
-          {c ? (
-            <span className="text-xs text-fg-muted">
-              {c.orders > 1 ? 'Returning customer' : 'New customer'} · {c.orders} order
-              {c.orders === 1 ? '' : 's'} · {formatKobo(c.spentKobo)} spent
-            </span>
-          ) : null}
-        </span>
+        <Avatar name={name} size={34} className="size-9 text-xs" />
+        <span className="truncate text-sm font-semibold">{name}</span>
       </div>
-      {c ? (
-        <ul className="flex flex-col gap-3 text-[13px]/[19px]">
+      <ul className="flex flex-col gap-3 text-[13px]/[19px]">
+        {order.customerPhone ? (
           <li className="flex items-center gap-2.5">
-            <Phone className="size-[15px] text-fg-subtle" aria-hidden /> {c.phone}
+            <Phone className="size-[15px] text-fg-subtle" aria-hidden /> {order.customerPhone}
           </li>
+        ) : null}
+        {order.customerEmail ? (
           <li className="flex items-center gap-2.5">
-            <Mail className="size-[15px] text-fg-subtle" aria-hidden /> {c.email}
+            <Mail className="size-[15px] text-fg-subtle" aria-hidden /> {order.customerEmail}
           </li>
-          <li className="flex items-center gap-2.5">
-            <MapPin className="size-[15px] text-fg-subtle" aria-hidden />
-            {order.method === 'Pickup' ? 'Pickup at Surulere studio' : order.address}
-          </li>
-        </ul>
-      ) : null}
+        ) : null}
+        <li className="flex items-start gap-2.5">
+          <MapPin className="mt-0.5 size-[15px] shrink-0 text-fg-subtle" aria-hidden />
+          <span className="flex flex-col gap-0.5">
+            {placeText(order)}
+            {order.deliveryAddress?.landmark ? (
+              <span className="text-xs text-fg-muted">{order.deliveryAddress.landmark}</span>
+            ) : null}
+          </span>
+        </li>
+      </ul>
       {order.note ? (
         <div className="flex flex-col gap-1 rounded-md bg-attention-soft px-3 py-2.5">
           <span className="text-[11px]/[14px] font-semibold text-warning">Note from customer</span>
           <p className="text-[13px]/[19px]">{order.note}</p>
         </div>
       ) : null}
-      <div className="grid grid-cols-2 gap-2">
-        <Button variant="secondary">
-          <MessageCircle /> WhatsApp
-        </Button>
-        <Button variant="secondary">
-          <Phone /> Call
-        </Button>
-      </div>
+      {links.tel ? (
+        <div className="grid grid-cols-2 gap-2">
+          <a href={links.whatsapp} target="_blank" rel="noreferrer" className={btn}>
+            <MessageCircle aria-hidden /> WhatsApp
+          </a>
+          <a href={links.tel} className={btn}>
+            <Phone aria-hidden /> Call
+          </a>
+        </div>
+      ) : null}
     </div>
   );
 }
 
+/** Payment failed / abandoned card. */
+export function OrderPaymentFailed({ order }: { order: OrderDetailDto }) {
+  const last = order.payments[0];
+  return (
+    <PaymentFailedNotice
+      orderNumber={orderTitle(order)}
+      reason="The customer’s payment didn’t go through"
+      amountKobo={order.totalKobo}
+      attempted={formatOrderTime(order.createdAt)}
+      reference={last?.reference ?? '—'}
+    />
+  );
+}
+
 /** 03.03 right panel: header, status pair, next step, progress, items, customer. */
-export function OrderPanel({ order, closeHref }: { order: MockOrder; closeHref: string }) {
+export function OrderPanel({ order, closeHref }: { order: OrderDetailDto; closeHref: string }) {
   const iconBtn =
     'inline-flex size-8 items-center justify-center rounded-md text-fg-muted hover:bg-selected [&_svg]:size-4';
   return (
-    <DetailPanel aria-label={`Order ${order.number}`}>
+    <DetailPanel aria-label={`Order ${orderTitle(order)}`}>
       <div className="flex flex-col gap-3 border-b border-line px-6 py-5">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-[24px]/[30px] font-semibold tracking-[-0.4px]">
-            {order.number}
+            {orderTitle(order)}
           </h2>
-          <div className="flex gap-1">
-            <button type="button" aria-label="Print" className={cn(iconBtn, 'border border-line')}>
-              <Printer aria-hidden />
-            </button>
-            <button
-              type="button"
-              aria-label="More actions"
-              className={cn(iconBtn, 'border border-line')}
-            >
-              <Ellipsis aria-hidden />
-            </button>
-            <Link href={closeHref} scroll={false} aria-label="Close" className={iconBtn}>
-              <X aria-hidden />
-            </Link>
-          </div>
+          <Link href={closeHref} scroll={false} aria-label="Close" className={iconBtn}>
+            <X aria-hidden />
+          </Link>
         </div>
-        <p className="text-[13px]/[19px] text-fg-muted">{order.placedSentence}</p>
+        <p className="text-[13px]/[19px] text-fg-muted">{placedSentence(order)}</p>
         <div className="grid grid-cols-2 gap-2.5">
           <div className="flex flex-col items-start gap-1.5 rounded-md bg-paper px-3 py-2.5">
             <SectionLabel className="text-[11px]/[14px] tracking-[0.6px]">Payment</SectionLabel>
-            <PaymentBadge status={order.payment} />
+            <PaymentBadge status={order.paymentStatus} />
           </div>
           <div className="flex flex-col items-start gap-1.5 rounded-md bg-paper px-3 py-2.5">
             <SectionLabel className="text-[11px]/[14px] tracking-[0.6px]">Fulfilment</SectionLabel>
-            <FulfilmentBadge status={order.fulfilment} />
+            <FulfilmentBadge status={order.fulfilmentStatus} />
           </div>
         </div>
       </div>
 
-      {order.failure ? (
+      {order.paymentStatus === 'FAILED' ? (
         <PanelBlock>
-          <PaymentFailedNotice
-            orderNumber={order.number}
-            reason={order.failure.reason}
-            amountKobo={order.totalKobo}
-            attempted={order.failure.attempted}
-            reference={order.failure.reference}
-          />
+          <OrderPaymentFailed order={order} />
         </PanelBlock>
-      ) : order.payment === 'PAID' &&
-        !['DELIVERED', 'CANCELLED', 'REFUNDED'].includes(order.fulfilment) ? (
+      ) : null}
+      {canAct(order) ? (
         <PanelBlock className="gap-2.5">
           <OrderStatusAction
+            orderId={order.id}
             orderNumber={order.number}
-            customerFirstName={firstName(order.customer)}
-            status={order.fulfilment}
-            pickup={order.method === 'Pickup'}
+            status={order.fulfilmentStatus}
+            pickup={order.isPickup}
+            nextStatuses={order.nextStatuses}
           />
-          <p className="text-xs text-fg-muted">
-            {firstName(order.customer)} gets an SMS and email each time you update the status.
-          </p>
         </PanelBlock>
       ) : null}
 
       <PanelBlock label="Progress" className="gap-3">
-        <OrderTimeline steps={order.steps} />
+        <OrderTimeline steps={orderSteps(order)} />
       </PanelBlock>
       <PanelBlock label="Items">
         <OrderItems order={order} />

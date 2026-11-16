@@ -1,7 +1,7 @@
 'use client';
 
 import { formatKobo, type StorefrontDeliveryDto } from '@ojara/shared';
-import { ArrowLeft, MessageCircle, ShoppingBag, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Lock, MessageCircle, ShoppingBag, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { type CartLine, useCart } from './cart';
 import {
@@ -50,9 +50,12 @@ function deliveryText(delivery: StorefrontDeliveryDto): string {
 export function CartView({
   whatsappHref,
   delivery,
+  acceptsPayments,
 }: {
   whatsappHref: string | null;
   delivery: StorefrontDeliveryDto;
+  /** The store can take payment online (Paystack payout account linked). */
+  acceptsPayments: boolean;
 }) {
   const { lines, count, subtotalKobo, setQty, remove } = useCart();
   const total = formatKobo(subtotalKobo);
@@ -60,7 +63,9 @@ export function CartView({
   const orderHref = whatsappHref
     ? `${whatsappHref}?text=${encodeURIComponent(orderMessage(lines, subtotalKobo))}`
     : null;
-  const note = 'Online payment is coming soon. Send your order to the store to arrange payment.';
+  const note = acceptsPayments
+    ? 'Delivery is added at checkout. Pay securely by card, transfer or USSD.'
+    : 'Online payment is coming soon. Send your order to the store to arrange payment.';
 
   if (lines.length === 0) {
     return (
@@ -76,7 +81,15 @@ export function CartView({
     );
   }
 
-  const cta = orderHref ? (
+  const cta = acceptsPayments ? (
+    <Link
+      href="/checkout"
+      className={storeButton('primary', 'h-[52px] w-full rounded-[10px] py-0')}
+    >
+      <Lock className="size-[15px]" aria-hidden />
+      Checkout · {total}
+    </Link>
+  ) : orderHref ? (
     <a href={orderHref} className={storeButton('primary', 'h-[52px] w-full rounded-[10px] py-0')}>
       <MessageCircle className="size-[17px]" aria-hidden />
       Order on WhatsApp · {total}

@@ -34,3 +34,10 @@ export function whatsappLink(
     label: m ? `+234 ${m[1]} ${m[2]} ${m[3]}` : number,
   };
 }
+
+/** Online checkout needs a linked payout account and at least one way to get the order. */
+export function canCheckout(store: StorefrontStoreDto): boolean {
+  return (
+    store.acceptsPayments && (store.delivery.zones.length > 0 || store.delivery.pickup !== null)
+  );
+}

@@ -1,5 +1,9 @@
 import 'server-only';
 import {
+  cartPriceSchema,
+  type CheckoutInput,
+  checkoutResultSchema,
+  storefrontOrderSchema,
   type StorefrontListQuery,
   storefrontListSchema,
   storefrontProductSchema,
@@ -7,7 +11,7 @@ import {
 } from '@ojara/shared';
 import { cache } from 'react';
 import { ApiRequestError } from './client';
-import { apiPublicGet } from './session';
+import { apiPublicGet, apiPublicPost } from './session';
 
 /** Shopper-facing catalogue reads for storefront pages (published data only). */
 
@@ -44,3 +48,18 @@ export const getStorefrontProduct = cache((storeId: string, slug: string) =>
     apiPublicGet(`${base(storeId)}/products/${encodeURIComponent(slug)}`, storefrontProductSchema),
   ),
 );
+
+export function priceCart(storeId: string, lines: { variantId: string; qty: number }[]) {
+  return apiPublicPost(`${base(storeId)}/cart/price`, cartPriceSchema, { lines });
+}
+
+export function startCheckout(storeId: string, input: CheckoutInput) {
+  return apiPublicPost(`${base(storeId)}/checkout`, checkoutResultSchema, input);
+}
+
+/** The order behind a Paystack reference; null if there's no such order in this store. */
+export function getStorefrontOrder(storeId: string, reference: string) {
+  return notFoundAsNull(
+    apiPublicGet(`${base(storeId)}/orders/${encodeURIComponent(reference)}`, storefrontOrderSchema),
+  );
+}

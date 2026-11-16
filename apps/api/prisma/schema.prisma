@@ -267,6 +267,8 @@ model Store {
   payoutAccountName      String?
   payoutAccountLast4     String?     @db.VarChar(4)
   payoutConnectedAt      DateTime?
+  /// Last order number used; orders count up from 1001.
+  lastOrderNumber        Int         @default(1000)
   createdAt              DateTime    @default(now())
   updatedAt              DateTime    @updatedAt
   archivedAt             DateTime?
@@ -481,6 +483,10 @@ model Order {
   deliveryZoneId   String?
   isPickup         Boolean          @default(false)
   notes            String?
+  /// Contact snapshot at checkout (the Customer row can change later).
+  customerName     String?
+  customerPhone    String?
+  customerEmail    String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -511,6 +517,8 @@ model OrderItem {
   unitPriceKobo Int
   quantity      Int
   lineTotalKobo Int
+  /// Product photo at the time of purchase (Cloudinary public_id).
+  imagePublicId String?
   createdAt     DateTime @default(now())
 
   store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)

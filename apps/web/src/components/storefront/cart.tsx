@@ -99,6 +99,10 @@ export function useCart() {
     clear: () => {
       write([]);
     },
+    /** Replace every line (checkout refreshes prices and stock from the store). */
+    replace: (next: CartLine[]) => {
+      write(next);
+    },
   };
 }
 

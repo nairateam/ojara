@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { CartView } from '@/components/storefront/cart-view';
-import { getShop, type HostParams, whatsappLink } from '@/components/storefront/store';
+import { canCheckout, getShop, type HostParams, whatsappLink } from '@/components/storefront/store';
 
 export const metadata: Metadata = { title: 'Your cart' };
 
@@ -11,6 +11,7 @@ export default async function CartPage({ params }: { params: HostParams }) {
     <CartView
       whatsappHref={whatsappLink(store.whatsappNumber)?.href ?? null}
       delivery={store.delivery}
+      acceptsPayments={canCheckout(store)}
     />
   );
 }
