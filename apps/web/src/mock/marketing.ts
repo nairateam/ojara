@@ -219,90 +219,145 @@ export const HOW_IT_WORKS_FAQ: Faq[] = [
 
 /* --------------------------------------------------------- 01.03 Stores on Ojara */
 
-export const STORE_FILTERS = ['All', 'Fashion', 'Beauty', 'Food', 'Gadgets', 'Home'] as const;
+/** Directory category chips (12 Stores). "All" clears the filter. */
+export const STORE_FILTERS = [
+  'All',
+  'Fashion',
+  'Beauty',
+  'Food & groceries',
+  'Gadgets',
+  'Home & décor',
+  'Fabrics & crafts',
+  'Accessories',
+] as const;
 
+export type StoreCategory = Exclude<(typeof STORE_FILTERS)[number], 'All'>;
+
+/** Store of the month. Its "Visit store" button opens the demo store. */
 export const FEATURED_STORE = {
   name: 'Adùnní Threads',
   initial: 'A',
-  meta: 'Fashion · Surulere, Lagos',
+  initials: 'AT',
+  meta: 'Fashion · Ibadan',
+  city: 'Ibadan',
+  month: 'November',
   description:
     'Hand-dyed adire and aso-oke from Abeokuta. Every piece is one of a kind, and ships across Nigeria.',
+  quote:
+    '“I used to spend my evenings answering ‘how much?’ in DMs. Now I send one link, and the orders just come in.”',
+  metrics: [
+    { value: '3.2×', label: 'more orders in 90 days' },
+    { value: '146', label: 'products listed' },
+    { value: '4.9', label: 'average rating' },
+  ],
   host: 'adunni.ojara.store',
   heroImage: '/mock/generated-6.jpg',
 };
 
 export type DirectoryStore = {
   name: string;
-  initial: string;
-  /** Logo tile colour from the design (merchant brand colours, not Ojara tokens). */
-  logoColor: string;
-  category: string;
-  location: string;
+  /** Two-letter monogram on the avatar. */
+  initials: string;
+  category: StoreCategory;
+  city: string;
+  productCount: number;
+  /** Not shown on the card; searched along with name, category and city. */
   description: string;
   cover: string;
   host: string;
 };
 
+/** In "Most popular" order. */
 export const DIRECTORY_STORES: DirectoryStore[] = [
   {
-    name: 'Mama Nkechi Foods',
-    initial: 'M',
-    logoColor: '#B5532E',
-    category: 'Food',
-    location: 'Enugu',
-    description: 'Pepper sauces, chin-chin and garri, packed fresh.',
-    cover: '/mock/generated-16.jpg',
+    name: 'Kaftan House',
+    initials: 'KH',
+    category: 'Fashion',
+    city: 'Lagos',
+    productCount: 84,
+    description: 'Men’s kaftans and agbada, tailored to your measurements.',
+    cover: '/mock/generated-3.jpg',
+    host: 'kaftanhouse.ojara.store',
+  },
+  {
+    name: 'Gele by Bimpe',
+    initials: 'GB',
+    category: 'Fabrics & crafts',
+    city: 'Abeokuta',
+    productCount: 52,
+    description: 'Aso-oke gele, auto-gele and headwraps for every occasion.',
+    cover: '/mock/generated-2.jpg',
+    host: 'gelebybimpe.ojara.store',
+  },
+  {
+    name: 'Mama Nkechi',
+    initials: 'MN',
+    category: 'Fashion',
+    city: 'Enugu',
+    productCount: 117,
+    description: 'Ankara dresses and two-pieces, sewn to order.',
+    cover: '/mock/generated-9.jpg',
     host: 'mamankechi.ojara.store',
   },
   {
-    name: 'Shea by Tunde',
-    initial: 'S',
-    logoColor: '#6B4FA0',
+    name: 'glow by temi',
+    initials: 'GT',
     category: 'Beauty',
-    location: 'Ibadan',
-    description: 'Raw shea butter and black soap, made in small batches.',
+    city: 'Lagos',
+    productCount: 63,
+    description: 'Raw shea butter, black soap and body oils, made in small batches.',
     cover: '/mock/generated-17.jpg',
-    host: 'sheabytunde.ojara.store',
+    host: 'glowbytemi.ojara.store',
   },
   {
     name: 'Ikeja Plug',
-    initial: 'I',
-    logoColor: '#2B2B2B',
+    initials: 'IP',
     category: 'Gadgets',
-    location: 'Ikeja, Lagos',
+    city: 'Lagos',
+    productCount: 210,
     description: 'Chargers, power banks and earbuds with 3-month warranty.',
     cover: '/mock/generated-15.jpg',
     host: 'ikejaplug.ojara.store',
   },
   {
     name: 'Lush Home NG',
-    initial: 'L',
-    logoColor: '#2F5D46',
-    category: 'Home',
-    location: 'Lekki, Lagos',
+    initials: 'LH',
+    category: 'Home & décor',
+    city: 'Abuja',
+    productCount: 98,
     description: 'Woven baskets, throw pillows and décor with African prints.',
     cover: '/mock/generated-18.jpg',
     host: 'lushhome.ojara.store',
   },
   {
-    name: 'Gele by Bimpe',
-    initial: 'G',
-    logoColor: '#8A3D6B',
-    category: 'Fashion',
-    location: 'Abeokuta',
-    description: 'Aso-oke gele, auto-gele and headwraps for every occasion.',
-    cover: '/mock/generated-2.jpg',
-    host: 'gelebybimpe.ojara.store',
+    name: 'Zaria Spice House',
+    initials: 'ZS',
+    category: 'Food & groceries',
+    city: 'Kano',
+    productCount: 45,
+    description: 'Pepper blends, suya spice, chin-chin and garri, packed fresh.',
+    cover: '/mock/generated-16.jpg',
+    host: 'zariaspice.ojara.store',
   },
   {
-    name: 'Kaftan House',
-    initial: 'K',
-    logoColor: '#4B5563',
-    category: 'Fashion',
-    location: 'Kano',
-    description: 'Men’s kaftans and agbada, tailored to your measurements.',
-    cover: '/mock/generated-3.jpg',
-    host: 'kaftanhouse.ojara.store',
+    name: 'Ankara & Co',
+    initials: 'AC',
+    category: 'Accessories',
+    city: 'Port Harcourt',
+    productCount: 38,
+    description: 'Ankara bucket hats, bags and hair accessories.',
+    cover: '/mock/generated-1.jpg',
+    host: 'ankaraandco.ojara.store',
+  },
+  {
+    name: 'Ọ̀ṣun Bags',
+    initials: 'OB',
+    category: 'Accessories',
+    city: 'Ibadan',
+    productCount: 29,
+    description: 'Handwoven clutches and purses in aso-oke and leather.',
+    cover: '/mock/generated-7.jpg',
+    host: 'osunbags.ojara.store',
   },
 ];
 

@@ -1,38 +1,31 @@
-import {
-  HomeHero,
-  HomeSteps,
-  MerchantStory,
-  PricingTeaser,
-  ProductShowcase,
-  SellersStrip,
-  WhySellersSwitch,
-} from '@/components/marketing/home-sections';
-import { PhoneCtaBand } from '@/components/marketing/primitives';
+import { HomeCategories } from '@/components/marketing/home/home-categories';
+import { HomeCompare } from '@/components/marketing/home/home-compare';
+import { HomeFaq } from '@/components/marketing/home/home-faq';
+import { HomeFeatures } from '@/components/marketing/home/home-features';
+import { HomeHero } from '@/components/marketing/home/home-hero';
+import { HomeMarquee } from '@/components/marketing/home/home-marquee';
+import { HomePayments } from '@/components/marketing/home/home-payments';
+import { HomePricing } from '@/components/marketing/home/home-pricing';
+import { HomeProcess } from '@/components/marketing/home/home-process';
+import { HomeTestimonials } from '@/components/marketing/home/home-testimonials';
 import { platformOrigin } from '@/lib/platform-url';
 
-/** 01.01 Home (desktop) and 01.07 Home – Mobile. */
+/** 08 Home (premium public site). The closing CTA and footer come from the (site) layout. */
 export default async function MarketingHome() {
-  const [appOrigin, siteOrigin] = await Promise.all([
-    platformOrigin('dashboard'),
-    platformOrigin('marketing'),
-  ]);
-  // The seeded demo storefront lives on a subdomain of the root domain.
-  const demoStoreUrl = siteOrigin.replace('://', '://demo.');
+  const appOrigin = await platformOrigin('dashboard');
 
   return (
     <>
-      <HomeHero appOrigin={appOrigin} demoStoreUrl={demoStoreUrl} />
-      <SellersStrip />
-      <WhySellersSwitch />
-      <ProductShowcase />
-      <HomeSteps />
-      <MerchantStory />
-      <PricingTeaser />
-      <PhoneCtaBand
-        appOrigin={appOrigin}
-        title="Your market is online. Take your stall there."
-        mobileTitle="Take your stall online."
-      />
+      <HomeHero appOrigin={appOrigin} />
+      <HomeMarquee appOrigin={appOrigin} />
+      <HomeFeatures />
+      <HomePayments />
+      <HomeCompare />
+      <HomeProcess />
+      <HomeCategories />
+      <HomeTestimonials />
+      <HomePricing appOrigin={appOrigin} />
+      <HomeFaq />
     </>
   );
 }

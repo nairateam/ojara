@@ -1,11 +1,18 @@
 import type { Metadata, Viewport } from 'next';
-import { Bricolage_Grotesque, Fraunces, Inter, JetBrains_Mono } from 'next/font/google';
+import {
+  Bricolage_Grotesque,
+  Fraunces,
+  Instrument_Serif,
+  Inter,
+  JetBrains_Mono,
+} from 'next/font/google';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
 // Fonts from the designs: Inter (UI), Bricolage Grotesque (display), JetBrains Mono (SKUs, DNS,
-// IPs) and Fraunces (merchant storefront display only).
+// IPs), Fraunces (merchant storefront display only) and Instrument Serif (italic accent lines on
+// the public site).
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
@@ -20,6 +27,13 @@ const jetbrains = JetBrains_Mono({
   display: 'swap',
 });
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', display: 'swap' });
+const instrument = Instrument_Serif({
+  subsets: ['latin'],
+  weight: '400',
+  style: ['normal', 'italic'],
+  variable: '--font-instrument',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: { default: 'Ojara', template: '%s · Ojara' },
@@ -36,7 +50,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en-NG"
-      className={cn(inter.variable, bricolage.variable, jetbrains.variable, fraunces.variable)}
+      className={cn(
+        inter.variable,
+        bricolage.variable,
+        jetbrains.variable,
+        fraunces.variable,
+        instrument.variable,
+      )}
     >
       <body>{children}</body>
     </html>

@@ -117,6 +117,8 @@
   --font-heading: var(--font-display);
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
   --font-serif: var(--font-fraunces), Georgia, serif;
+  /* Public site: italic second lines of headings (Instrument Serif). */
+  --font-accent: var(--font-instrument), Georgia, serif;
 
   /* Ojara colours */
   --color-paper: var(--ojara-paper);
@@ -261,5 +263,176 @@
   :focus-visible {
     outline: 1.5px solid var(--ojara-forest);
     outline-offset: 2px;
+  }
+}
+
+/* -------------------------------------------------------------------------------------------
+ * Public site motion (08–14). Scoped to `.site-root` (the marketing layout). Reveal states are
+ * only applied once `SiteMotion` has run (`html.site-motion`), so content is visible without JS.
+ * Everything is switched off for people who prefer reduced motion.
+ * ----------------------------------------------------------------------------------------- */
+
+@keyframes site-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes site-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes site-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes site-sheen {
+  from {
+    transform: translateX(-120%) skewX(-20deg);
+  }
+  to {
+    transform: translateX(220%) skewX(-20deg);
+  }
+}
+
+@layer components {
+  /* Scroll reveal: fade + rise, staggered by `data-reveal` (0–6). An animation, not a transition,
+     so it never overrides an element's own hover transitions. */
+  html.site-motion .site-root [data-reveal]:not([data-revealed]) {
+    opacity: 0;
+  }
+  html.site-motion .site-root [data-reveal][data-revealed] {
+    animation: site-reveal 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .site-root [data-reveal='1'][data-revealed] {
+    animation-delay: 80ms;
+  }
+  .site-root [data-reveal='2'][data-revealed] {
+    animation-delay: 160ms;
+  }
+  .site-root [data-reveal='3'][data-revealed] {
+    animation-delay: 240ms;
+  }
+  .site-root [data-reveal='4'][data-revealed] {
+    animation-delay: 320ms;
+  }
+  .site-root [data-reveal='5'][data-revealed] {
+    animation-delay: 400ms;
+  }
+  .site-root [data-reveal='6'][data-revealed] {
+    animation-delay: 480ms;
+  }
+
+  /* Pill buttons: lift, shadow, a light sheen sweeping across, arrows nudging. */
+  .site-btn {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    transition:
+      translate 0.3s cubic-bezier(0.2, 0.7, 0.2, 1),
+      scale 0.15s ease-out,
+      box-shadow 0.3s ease,
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      opacity 0.3s ease;
+  }
+  .site-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 45%;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+    transform: translateX(-120%) skewX(-20deg);
+    pointer-events: none;
+  }
+  .site-btn:hover {
+    translate: 0 -2px;
+    box-shadow: 0 12px 28px -12px rgb(38 43 35 / 0.55);
+  }
+  .site-btn:hover::after {
+    animation: site-sheen 0.75s ease-out;
+  }
+  .site-btn:active {
+    translate: 0 0;
+    scale: 0.97;
+  }
+  .site-btn svg {
+    transition: translate 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  /* Arrows anywhere in a hovered link/button move the way they point. */
+  .site-root :is(a, button):hover svg.lucide-arrow-right {
+    translate: 4px 0;
+  }
+  .site-root :is(a, button):hover svg.lucide-arrow-up-right {
+    translate: 2px -2px;
+  }
+  .site-root :is(a, button):hover svg.lucide-arrow-down {
+    translate: 0 3px;
+  }
+  .site-root
+    :is(a, button)
+    svg:is(.lucide-arrow-right, .lucide-arrow-up-right, .lucide-arrow-down) {
+    transition: translate 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  /* Cards that link somewhere: photos zoom slightly, arrow badges fill and turn. */
+  .site-root a img {
+    transition: scale 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .site-root a:hover img {
+    scale: 1.04;
+  }
+  .site-root .arrow-badge {
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease,
+      border-color 0.3s ease,
+      rotate 0.3s ease;
+  }
+  .site-root a:hover .arrow-badge {
+    background-color: var(--ojara-forest);
+    border-color: var(--ojara-forest);
+    color: var(--ojara-paper);
+    rotate: 45deg;
+  }
+
+  .site-marquee {
+    animation: site-marquee var(--marquee-duration, 60s) linear infinite;
+  }
+  .site-marquee:hover {
+    animation-play-state: paused;
+  }
+  .site-float {
+    animation: site-float 6s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.site-motion .site-root [data-reveal] {
+    opacity: 1;
+    animation: none;
+  }
+  .site-marquee,
+  .site-float,
+  .site-btn:hover::after {
+    animation: none;
+  }
+  .site-btn:hover {
+    translate: none;
   }
 }

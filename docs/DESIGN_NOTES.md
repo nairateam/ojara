@@ -52,15 +52,25 @@ internal prefix):
 
 ### 01 Public site — `(marketing)` on the root domain
 
-| Screen                | Route                                                     | Status   |
-| --------------------- | --------------------------------------------------------- | -------- |
-| 01.01 Home            | `/`                                                       | UI built |
-| 01.02 How It Works    | `/how-it-works`                                           | UI built |
-| 01.03 Stores on Ojara | `/stores` (search and filters work on sample data)        | UI built |
-| 01.04 Pricing         | `/pricing` (plans from `PLANS` in `@ojara/shared`)        | UI built |
-| 01.05 Help Centre     | `/help` (`?q=` search works on sample articles)           | UI built |
-| 01.06 Help Article    | `/help/[slug]` (full sample: `how-paystack-payouts-work`) | UI built |
-| 01.07 Home – Mobile   | `/` (responsive)                                          | UI built |
+Rebuilt to the premium redesign (`ojara design - customer-facing`, screens 08–14): forest hero card
+with the nav inside, Bricolage + Instrument Serif italic headings, closing CTA + footer card. Hero
+height is capped at the viewport on desktop. Scroll reveal, marquee and hover motion are in
+`site-motion.tsx` + `globals.css` (off for reduced motion). Sample copy lives in `mock/site-*.ts`.
+
+| Screen          | Route                                                   | Status              |
+| --------------- | ------------------------------------------------------- | ------------------- |
+| 08 Home         | `/` (responsive)                                        | Built               |
+| 09 Pricing      | `/pricing` (plans from `PLANS`; yearly = 10× monthly)   | Built               |
+| 10 How it works | `/how-it-works`                                         | Built               |
+| 11 About        | `/about` (Careers hidden: no jobs)                      | Built               |
+| 12 Stores       | `/stores` (search, category, city, sort on sample data) | Built               |
+| 13 Blog         | —                                                       | Hidden: no blog yet |
+| 14 Contact      | `/contact` (message form hidden: no backend)            | Built               |
+| Help centre     | `/help`, `/help/[slug]` (old content, new hero/nav)     | Built               |
+
+Hidden until they exist: blog, newsletter sign-up, social links, video tour, contact form, free
+trial wording, pricing rows for features Ojara doesn't have (templates, abandoned-cart reminders,
+analytics, WhatsApp order alerts), GIG Logistics / Google Sheets integrations.
 
 ### 02 Auth and onboarding — `(auth)` and `(onboarding)` on `app.` (admin login on `admin.`)
 

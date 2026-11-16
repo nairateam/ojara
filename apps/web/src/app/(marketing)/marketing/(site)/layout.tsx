@@ -1,14 +1,12 @@
 import type { ReactNode } from 'react';
-import { MarketingFooter } from '@/components/marketing/marketing-footer';
-import { platformOrigin } from '@/lib/platform-url';
+import { SiteClosing } from '@/components/marketing/site-shell';
 
-/** Standard marketing pages: content + full forest footer. */
-export default async function MarketingSiteLayout({ children }: { children: ReactNode }) {
-  const appOrigin = await platformOrigin('dashboard');
+/** Public site pages: content, then the closing CTA + footer card. */
+export default function MarketingSiteLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <main className="flex-1">{children}</main>
-      <MarketingFooter appOrigin={appOrigin} />
+      <SiteClosing />
     </>
   );
 }

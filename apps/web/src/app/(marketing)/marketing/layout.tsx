@@ -1,17 +1,14 @@
 import type { ReactNode } from 'react';
-import { MarketingHeader } from '@/components/marketing/marketing-header';
-import { platformOrigin } from '@/lib/platform-url';
+import { SiteMotion } from '@/components/marketing/site-motion';
 
 /**
- * Public site shell (ROOT_DOMAIN), matching 01.xx. The header is shared; each nested layout/page
- * renders its own <main> and footer, because Pricing (01.04) swaps the standard footer for a dark
- * CTA band with a one-line footer (01.04).
+ * Public site shell (ROOT_DOMAIN), premium design 08–14: paper page. The nav lives inside each
+ * page's hero card (`SiteHero`); the closing CTA + footer card comes from the (site) layout.
  */
-export default async function MarketingLayout({ children }: { children: ReactNode }) {
-  const appOrigin = await platformOrigin('dashboard');
+export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-paper text-fg">
-      <MarketingHeader appOrigin={appOrigin} />
+    <div className="site-root flex min-h-dvh flex-col bg-paper text-fg">
+      <SiteMotion />
       {children}
     </div>
   );

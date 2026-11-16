@@ -2,6 +2,7 @@ import { ChevronRight, FileText, Mail, MessageCircle, Search } from 'lucide-reac
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { GUTTER, MarketingIcon } from '@/components/marketing/primitives';
+import { DisplayHeading, SiteEyebrow, SiteHero } from '@/components/marketing/site-shell';
 import { cn } from '@/lib/utils';
 import {
   HELP_TOPICS,
@@ -29,7 +30,10 @@ const TOPIC_SEARCH: Record<string, string> = {
   'domains-and-branding': 'domain',
 };
 
-/** 01.05 Help Centre. Search is a plain GET form filtering the sample article list. */
+/**
+ * 01.05 Help Centre (no premium design of its own): the search sits in the site hero card so the
+ * page gets the shared nav. Search is a plain GET form filtering the sample article list.
+ */
 export default async function HelpCentrePage({ searchParams }: { searchParams: SearchParams }) {
   const { q = '' } = await searchParams;
   const needle = q.trim().toLowerCase();
@@ -39,47 +43,55 @@ export default async function HelpCentrePage({ searchParams }: { searchParams: S
 
   return (
     <>
-      <section aria-labelledby="help-heading" className="px-3 pt-2 md:px-10 md:pt-4">
-        <div className="flex flex-col items-center gap-5 rounded-[22px] bg-forest px-5 py-12 md:rounded-2xl md:px-20 md:py-16">
-          <h1
-            id="help-heading"
-            className="text-center font-display text-[38px] leading-tight font-semibold tracking-[-1.2px] text-paper md:text-[52px] md:tracking-[-1.6px]"
-          >
-            How can we help?
-          </h1>
+      <SiteHero>
+        <section
+          aria-label="Help centre"
+          className="flex flex-col items-center gap-5 px-5 pt-12 pb-10 md:gap-6 md:px-10 md:pt-16 md:pb-14"
+        >
+          <SiteEyebrow tone="light">Help centre</SiteEyebrow>
+          <DisplayHeading
+            as="h1"
+            size="md"
+            tone="light"
+            line1="How can we help?"
+            className="items-center text-center"
+          />
           <form action="/help" method="get" role="search" className="w-full max-w-[620px]">
-            <label className="flex items-center gap-3 rounded-[14px] bg-paper px-[18px] py-4 focus-within:shadow-focus">
-              <Search aria-hidden className="size-5 shrink-0 text-fg-muted" />
+            <label className="flex items-center gap-3 rounded-full bg-surface py-2 pr-2 pl-5 text-forest focus-within:shadow-focus">
+              <Search aria-hidden className="size-[18px] shrink-0 text-fg-muted" />
               <span className="sr-only">Search help articles</span>
               <input
                 type="search"
                 name="q"
                 defaultValue={q}
                 placeholder="Search for “payouts”, “delivery zones”, “custom domain”…"
-                className="min-w-0 flex-1 bg-transparent text-base text-fg outline-none placeholder:text-fg-subtle"
+                className="min-w-0 flex-1 bg-transparent py-2.5 text-base text-fg outline-none placeholder:text-fg-subtle"
               />
-              <kbd className="hidden rounded-sm border border-line px-2 py-0.5 font-sans text-xs text-fg-muted sm:inline">
-                /
-              </kbd>
+              <button
+                type="submit"
+                className="site-btn rounded-full bg-forest px-4 py-[13px] text-[15px] font-semibold text-paper hover:opacity-95 sm:px-[22px]"
+              >
+                Search
+              </button>
             </label>
           </form>
           <nav
             aria-label="Audience"
-            className="flex gap-1 rounded-pill bg-paper/8 p-1 text-sm font-semibold"
+            className="flex gap-0.5 rounded-full bg-paper/12 p-[5px] text-sm font-medium"
           >
             <Link
               href="/help"
               aria-current="page"
-              className="rounded-pill bg-surface-muted px-4 py-2 text-fg"
+              className="rounded-full bg-paper/16 px-4 py-2 text-paper"
             >
               I sell on Ojara
             </Link>
-            <a href="#shoppers" className="rounded-pill px-4 py-2 text-fg-on-dark hover:text-paper">
+            <a href="#shoppers" className="rounded-full px-4 py-2 text-paper hover:bg-paper/8">
               I bought from a store
             </a>
           </nav>
-        </div>
-      </section>
+        </section>
+      </SiteHero>
 
       {!needle && (
         <section
