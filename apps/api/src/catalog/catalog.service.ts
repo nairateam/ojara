@@ -2,7 +2,9 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -22,6 +24,7 @@ import {
   variantKey,
 } from '@ojara/shared';
 import { PrismaService } from '../database/prisma.service.js';
+import { IMAGE_SERVICE, type ImageService } from '../media/image.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 
 type Tx = Prisma.TransactionClient;
@@ -77,6 +80,17 @@ const productSelect = {
   updatedAt: true,
   archivedAt: true,
   variants: { select: variantSelect, orderBy: { position: 'asc' } },
+  images: {
+    select: {
+      id: true,
+      cloudinaryPublicId: true,
+      width: true,
+      height: true,
+      alt: true,
+      position: true,
+    },
+    orderBy: { position: 'asc' },
+  },
 } as const satisfies Prisma.ProductSelect;
 
 type ProductRow = Prisma.ProductGetPayload<{ select: typeof productSelect }>;
@@ -87,6 +101,10 @@ function toDetail(p: ProductRow): ProductDetailDto {
     // Written only through productInputSchema, so the JSON always has these shapes.
     options: p.options as ProductOption[],
     variants: p.variants.map((v) => ({ ...v, options: v.options as Record<string, string> })),
+    images: p.images.map(({ cloudinaryPublicId, ...i }) => ({
+      ...i,
+      publicId: cloudinaryPublicId,
+    })),
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
     archivedAt: p.archivedAt?.toISOString() ?? null,
@@ -115,7 +133,12 @@ function rethrowSkuConflict(err: unknown): never {
  */
 @Injectable()
 export class CatalogService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(CatalogService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(IMAGE_SERVICE) private readonly images: ImageService,
+  ) {}
 
   /* ---------------------------------- products ---------------------------------- */
 
@@ -162,6 +185,11 @@ export class CatalogService {
           updatedAt: true,
           category: { select: { name: true } },
           variants: { select: { stockQuantity: true, isActive: true } },
+          images: {
+            select: { cloudinaryPublicId: true },
+            orderBy: { position: 'asc' },
+            take: 1,
+          },
         },
       });
 
@@ -188,6 +216,7 @@ export class CatalogService {
           ).length,
           outOfStockCount: active.filter((v) => v.stockQuantity === 0).length,
           trackStock: p.trackStock,
+          coverPublicId: p.images[0]?.cloudinaryPublicId ?? null,
           updatedAt: p.updatedAt.toISOString(),
         };
       });
@@ -463,6 +492,143 @@ export class CatalogService {
         ...(metadata ? { metadata } : {}),
       },
     });
+  }
+
+  /* ----------------------------------- images ----------------------------------- */
+
+  /**
+   * Registers a photo the browser uploaded straight to Cloudinary (with a signature from
+   * POST /media/sign). The asset is re-read from Cloudinary, so its folder (this store's product
+   * folder), size and dimensions come from the provider, not the browser. Plan limits are checked
+   * again here; an upload that breaks them is deleted rather than left orphaned.
+   */
+  async addImage(
+    storeId: string,
+    actorId: string,
+    productId: string,
+    publicId: string,
+  ): Promise<ProductDetailDto> {
+    const asset = await this.images.getAsset(publicId, storeId, 'product');
+    if (!asset) throw new BadRequestException('That upload wasn’t found. Please try again.');
+    try {
+      return await this.prisma.tenantTransaction(async (tx) => {
+        const product = await tx.product.findFirst({
+          where: { id: productId, storeId },
+          select: { id: true, _count: { select: { images: true } } },
+        });
+        if (!product) throw new NotFoundException('Product not found');
+        const limits = await this.planLimits(tx, storeId);
+        if (product._count.images >= limits.maxImagesPerProduct) {
+          throw new ForbiddenException({
+            message: `Your plan allows ${limits.maxImagesPerProduct} photos per product. Upgrade to add more.`,
+            code: CATALOG_ERROR_CODES.planLimit,
+          });
+        }
+        if (asset.bytes > limits.maxImageBytes) {
+          throw new BadRequestException(
+            `Photos on your plan can be up to ${Math.floor(limits.maxImageBytes / (1024 * 1024))} MB`,
+          );
+        }
+        const last = await tx.productImage.aggregate({
+          where: { storeId, productId },
+          _max: { position: true },
+        });
+        await tx.productImage.create({
+          data: {
+            storeId,
+            productId,
+            cloudinaryPublicId: asset.publicId,
+            width: asset.width,
+            height: asset.height,
+            format: asset.format,
+            position: (last._max.position ?? -1) + 1,
+          },
+        });
+        await this.audit(tx, storeId, actorId, 'product.image_added', productId);
+        return toDetail(
+          await tx.product.findUniqueOrThrow({ where: { id: productId }, select: productSelect }),
+        );
+      });
+    } catch (err) {
+      if (prismaCode(err) === 'P2002') throw new ConflictException('That photo is already added');
+      if (err instanceof ForbiddenException || err instanceof BadRequestException) {
+        await this.deleteAsset(publicId, storeId);
+      }
+      throw err;
+    }
+  }
+
+  /** Removes a photo from the product, then deletes it from Cloudinary (best effort). */
+  async removeImage(
+    storeId: string,
+    actorId: string,
+    productId: string,
+    imageId: string,
+  ): Promise<ProductDetailDto> {
+    const { detail, publicId } = await this.prisma.tenantTransaction(async (tx) => {
+      const image = await tx.productImage.findFirst({
+        where: { id: imageId, productId, storeId },
+        select: { id: true, cloudinaryPublicId: true },
+      });
+      if (!image) throw new NotFoundException('Photo not found');
+      await tx.productImage.delete({ where: { id: image.id } });
+      const rest = await tx.productImage.findMany({
+        where: { storeId, productId },
+        orderBy: { position: 'asc' },
+        select: { id: true },
+      });
+      for (const [position, r] of rest.entries()) {
+        await tx.productImage.update({ where: { id: r.id }, data: { position } });
+      }
+      await this.audit(tx, storeId, actorId, 'product.image_removed', productId);
+      return {
+        publicId: image.cloudinaryPublicId,
+        detail: toDetail(
+          await tx.product.findUniqueOrThrow({ where: { id: productId }, select: productSelect }),
+        ),
+      };
+    });
+    await this.deleteAsset(publicId, storeId);
+    return detail;
+  }
+
+  /** Sets the photo order (the first is the cover) from the full list of the product's photo ids. */
+  async reorderImages(
+    storeId: string,
+    actorId: string,
+    productId: string,
+    ids: string[],
+  ): Promise<ProductDetailDto> {
+    return this.prisma.tenantTransaction(async (tx) => {
+      const current = await tx.productImage.findMany({
+        where: { storeId, productId },
+        select: { id: true },
+      });
+      const known = new Set(current.map((i) => i.id));
+      if (
+        ids.length !== known.size ||
+        new Set(ids).size !== ids.length ||
+        !ids.every((id) => known.has(id))
+      ) {
+        throw new BadRequestException('The photos changed. Reload and try again.');
+      }
+      for (const [position, id] of ids.entries()) {
+        await tx.productImage.update({ where: { id }, data: { position } });
+      }
+      await this.audit(tx, storeId, actorId, 'product.images_reordered', productId);
+      return toDetail(
+        await tx.product.findUniqueOrThrow({ where: { id: productId }, select: productSelect }),
+      );
+    });
+  }
+
+  /** Deleting from Cloudinary must not fail the request; a leftover file only costs storage. */
+  private async deleteAsset(publicId: string, storeId: string) {
+    try {
+      await this.images.delete(publicId, storeId);
+    } catch (err) {
+      this.logger.warn(`Could not delete image ${publicId}: ${String(err)}`);
+    }
   }
 
   /* --------------------------------- categories --------------------------------- */

@@ -105,3 +105,21 @@ export const getAdminAccess = cache(async (): Promise<AdminAccess> => {
 export function apiGet<S extends z.ZodType>(path: `/${string}`, schema: S) {
   return signedInRequest(path, schema);
 }
+
+/**
+ * Server-to-server read that doesn't act as anyone (no cookies): storefront data for shoppers.
+ * Still forwards the shopper's IP so rate limits apply per visitor.
+ */
+export async function apiPublicGet<S extends z.ZodType>(path: `/${string}`, schema: S) {
+  const h = await headers();
+  return apiRequest({
+    baseUrl: serverEnv().API_INTERNAL_URL,
+    path,
+    schema,
+    headers: {
+      'x-internal-token': serverEnv().INTERNAL_API_TOKEN,
+      'x-ojara-forwarded-for': clientIp(h),
+    },
+    signal: AbortSignal.timeout(5_000),
+  });
+}

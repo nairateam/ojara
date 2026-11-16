@@ -162,6 +162,23 @@ export const productVariantSchema = z.object({
 });
 export type ProductVariantDto = z.infer<typeof productVariantSchema>;
 
+export const productImageSchema = z.object({
+  id: z.string(),
+  /** Cloudinary public_id (never a URL; delivery URLs come from named presets). */
+  publicId: z.string(),
+  width: z.number().int(),
+  height: z.number().int(),
+  alt: z.string().nullable(),
+  position: z.number().int(),
+});
+export type ProductImageDto = z.infer<typeof productImageSchema>;
+
+/** POST …/products/:id/images after a direct upload; the API re-reads the asset from Cloudinary. */
+export const productImageRegisterSchema = z.object({ publicId: z.string().min(1).max(255) });
+
+/** PUT …/products/:id/images/order: every image id of the product, cover first. */
+export const productImageOrderSchema = z.object({ ids: z.array(z.string().min(1)).min(1).max(20) });
+
 export const productDetailSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -177,6 +194,8 @@ export const productDetailSchema = z.object({
   lowStockThreshold: z.number().int(),
   options: z.array(z.object({ name: z.string(), values: z.array(z.string()) })),
   variants: z.array(productVariantSchema),
+  /** In display order; the first is the cover. */
+  images: z.array(productImageSchema),
   createdAt: z.string(),
   updatedAt: z.string(),
   archivedAt: z.string().nullable(),
@@ -198,6 +217,8 @@ export const productListItemSchema = z.object({
   lowStockCount: z.number().int(),
   outOfStockCount: z.number().int(),
   trackStock: z.boolean(),
+  /** Cloudinary public_id of the first image, if any. */
+  coverPublicId: z.string().nullable(),
   updatedAt: z.string(),
 });
 export type ProductListItemDto = z.infer<typeof productListItemSchema>;

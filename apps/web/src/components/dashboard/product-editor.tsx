@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import {
   CATALOG_LIMITS,
   type CategoryDto,
@@ -42,6 +43,7 @@ import { Field, RadioCard, Select, Textarea } from '@/components/ui/form-control
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { ProductPhotos } from './product-photos';
 import { UnsavedIndicator } from './unsaved-indicator';
 
 /* ----------------------------------------- helpers ----------------------------------------- */
@@ -126,6 +128,9 @@ export function ProductEditor({
   storeName,
   storeAddress,
   promotionsAllowed,
+  storeId,
+  maxImages,
+  maxImageBytes,
   notice,
 }: {
   product: ProductDetailDto | null;
@@ -133,6 +138,9 @@ export function ProductEditor({
   storeName: string;
   storeAddress: string;
   promotionsAllowed: boolean;
+  storeId: string;
+  maxImages: number;
+  maxImageBytes: number;
   notice?: 'saved' | 'archived' | 'restored' | undefined;
 }) {
   const formId = 'product-form';
@@ -168,6 +176,7 @@ export function ProductEditor({
     ),
   );
   const [localError, setLocalError] = useState<string>();
+  const [cover, setCover] = useState<string | null>(product?.images[0]?.publicId ?? null);
 
   const [state, formAction, saving] = useActionState<ProductFormState, FormData>(saveProduct, {});
   const [archiving, startArchive] = useTransition();
@@ -385,13 +394,24 @@ export function ProductEditor({
             title="Images"
             description="The first image is shown on your storefront and in shared links."
           >
-            <div className="flex items-center gap-3 rounded-md border border-dashed border-line-strong bg-surface-muted/60 p-4">
-              <ImagePlus className="size-5 shrink-0 text-fg-muted" aria-hidden />
-              <p className="text-[13px]/[19px] text-fg-muted">
-                <span className="font-semibold text-fg">Photo upload is coming soon.</span> Save the
-                product now and add photos when uploads open.
-              </p>
-            </div>
+            {product ? (
+              <ProductPhotos
+                storeId={storeId}
+                productId={product.id}
+                productName={product.name}
+                initialImages={product.images}
+                maxImages={maxImages}
+                maxBytes={maxImageBytes}
+                onImagesChange={(images) => setCover(images[0]?.publicId ?? null)}
+              />
+            ) : (
+              <div className="flex items-center gap-3 rounded-md border border-dashed border-line-strong bg-surface-muted/60 p-4">
+                <ImagePlus className="size-5 shrink-0 text-fg-muted" aria-hidden />
+                <p className="text-[13px]/[19px] text-fg-muted">
+                  Save the product first, then add up to {maxImages} photos.
+                </p>
+              </div>
+            )}
           </SectionCard>
 
           <SectionCard
@@ -779,9 +799,15 @@ export function ProductEditor({
                 <span className="font-display text-xs font-bold">{storeName}</span>
                 <ShoppingBag className="size-3.5" aria-hidden />
               </div>
-              <span className="flex aspect-[5/4] w-full items-center justify-center rounded-xs bg-store-band text-xs text-store-muted">
-                No image yet
-              </span>
+              {cover ? (
+                <span className="relative aspect-[5/4] w-full overflow-hidden rounded-xs">
+                  <Image src={cover} alt="" fill sizes="290px" className="object-cover" />
+                </span>
+              ) : (
+                <span className="flex aspect-[5/4] w-full items-center justify-center rounded-xs bg-store-band text-xs text-store-muted">
+                  No image yet
+                </span>
+              )}
               <span className="flex flex-col">
                 <span className="text-[13px]/[19px] font-semibold">{name || 'Product name'}</span>
                 <span className="flex items-baseline gap-1.5 text-[13px]/[19px]">

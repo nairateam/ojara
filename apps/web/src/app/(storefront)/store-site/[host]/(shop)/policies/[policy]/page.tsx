@@ -1,23 +1,31 @@
-import { Calendar, RefreshCw, Wallet } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PageTitle } from '@/components/storefront/primitives';
+import { getShop, whatsappLink } from '@/components/storefront/store';
+import { POLICY_SLUGS, storePolicy } from '@/lib/storefront/policies';
 import { cn } from '@/lib/utils';
-import { getPolicy, POLICIES } from '@/mock/storefront';
 
-type Props = { params: Promise<{ policy: string }> };
+type Props = { params: Promise<{ host: string; policy: string }> };
 
-const FACT_ICONS = { calendar: Calendar, refresh: RefreshCw, wallet: Wallet } as const;
+async function load(params: Props['params']) {
+  const [{ store }, { policy: slug }] = await Promise.all([getShop(params), params]);
+  const details = {
+    name: store.name,
+    whatsapp: whatsappLink(store.whatsappNumber)?.label ?? null,
+    email: store.contactEmail,
+  };
+  return { details, policy: storePolicy(slug, details) };
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const policy = getPolicy((await params).policy);
+  const { policy } = await load(params);
   return policy ? { title: policy.title } : {};
 }
 
-/** 05.10 Returns Policy (and the other store policies in the same layout). */
+/** 05.10 store policies layout (returns, delivery, privacy, terms). */
 export default async function PolicyPage({ params }: Props) {
-  const policy = getPolicy((await params).policy);
+  const { details, policy } = await load(params);
   if (!policy) notFound();
   return (
     <section className="flex flex-col gap-8 px-4 pt-8 pb-16 md:flex-row md:gap-12 md:px-8 md:pt-14 md:pb-[88px] xl:gap-[72px] xl:px-[120px]">
@@ -29,7 +37,9 @@ export default async function PolicyPage({ params }: Props) {
           Policies
         </span>
         <ul className="flex gap-1 overflow-x-auto [scrollbar-width:none] md:flex-col">
-          {POLICIES.map((p) => {
+          {POLICY_SLUGS.map((slug) => {
+            const p = storePolicy(slug, details);
+            if (!p) return null;
             const active = p.slug === policy.slug;
             return (
               <li key={p.slug} className="shrink-0">
@@ -52,24 +62,6 @@ export default async function PolicyPage({ params }: Props) {
       </nav>
       <article className="flex max-w-[760px] min-w-0 flex-1 flex-col gap-[18px]">
         <PageTitle>{policy.title}</PageTitle>
-        <p className="text-ui text-store-body">{policy.updated}</p>
-        {policy.facts ? (
-          <div className="grid gap-3 pt-1 pb-2 sm:grid-cols-3">
-            {policy.facts.map((f) => {
-              const Icon = FACT_ICONS[f.icon];
-              return (
-                <div
-                  key={f.title}
-                  className="flex flex-col gap-1.5 rounded-lg border border-store-border bg-store-card p-[18px]"
-                >
-                  <Icon className="size-[18px] text-store-primary" aria-hidden />
-                  <span className="text-base font-semibold text-store-ink">{f.title}</span>
-                  <span className="text-ui text-store-body">{f.sub}</span>
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
         {policy.sections.map((s) => (
           <div key={s.heading} className="flex flex-col gap-[18px]">
             <h2 className="text-lg font-semibold text-store-ink">{s.heading}</h2>

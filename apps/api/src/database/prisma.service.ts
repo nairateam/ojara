@@ -5,8 +5,18 @@ import { type Prisma, PrismaClient } from '../generated/prisma/client.js';
 import { TenantContext, TenantContextMissingError } from '../tenancy/tenant-context.js';
 import { tenantExtension } from './tenant-prisma.extension.js';
 
+/**
+ * Every tenant query runs in a short transaction (to apply the RLS setting). Prisma's default 2 s
+ * wait to *start* one is too short when the database is waking up (Neon suspends idle compute;
+ * resuming takes a few seconds), which failed the first request after a quiet period.
+ */
+export const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 15_000 } as const;
+
 export function createBaseClient(connectionString: string): PrismaClient {
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+  return new PrismaClient({
+    adapter: new PrismaPg({ connectionString }),
+    transactionOptions: TRANSACTION_OPTIONS,
+  });
 }
 
 export function createTenantClient(base: PrismaClient) {

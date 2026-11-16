@@ -247,6 +247,36 @@ unless noted.
       be saved with it.
   - **Not built yet:** menu order uses up/down buttons rather than drag-and-drop. Photos and
     category covers wait for real Cloudinary keys. Collections have no model yet.
+- **Product photos:**
+  1. The browser asks `POST /media/sign`, which checks plan limits and signs the upload into the
+     store's folder.
+  2. The browser uploads straight to Cloudinary.
+  3. The browser calls `POST …/products/:id/images`. The API re-reads the file from Cloudinary
+     (folder, size, dimensions) instead of trusting the browser, and checks the limits again. An
+     upload that breaks them is deleted.
+  - Removing a photo deletes the file. That deletion is best effort: a leftover file only costs
+    storage.
+  - Photo changes apply immediately, not on "Save changes". The first photo is the cover.
+  - TODO: a cleanup job for uploads that were never registered (for example, a closed tab).
+- **Storefront:**
+  - Shopper data comes from `GET /v1/internal/storefront/:storeId/*`. These endpoints take the
+    internal token, no session, are rate-limited per shopper, and only return published products
+    of published stores.
+  - Prices and availability are pure functions (`storefront-pricing.ts`):
+    - A variant's own price wins.
+    - The sale price applies only if the plan allows promotions.
+    - Stock rules follow the product's settings.
+  - Listing filters and sorts in memory, which is fine within plan product limits.
+  - The cart lives in the shopper's browser (`localStorage`; each store is its own origin). It
+    only snapshots prices; checkout will re-price.
+  - Until checkout exists:
+    - The cart offers "Order on WhatsApp" with the items pre-filled.
+    - `/checkout*` redirects to the cart.
+    - `/track` says tracking is coming soon.
+  - Content merchants can't write yet (hero copy, story, announcement bar, policies) uses neutral
+    defaults built from the store, rather than the design's sample text.
+- **Database waking up:** Prisma transactions may take up to 10 s to start (default 2 s). Neon
+  suspends idle compute, and the first query after a quiet period failed while it resumed.
 - **Onboarding** (`app/(onboarding)/dash/onboarding`):
   - **Saving:** each step's Continue posts to a Server Action (`actions.ts`). It authenticates,
     takes the store from the session (never from the form), re-validates with the shared Zod

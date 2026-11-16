@@ -10,7 +10,7 @@ import {
   MoveButtons,
   RestoreCategoryButton,
 } from '@/components/dashboard/category-controls';
-import { InitialThumb } from '@/components/dashboard/thumb';
+import { InitialThumb, ProductThumb } from '@/components/dashboard/thumb';
 import { Button } from '@/components/ui/button';
 import { DetailPanel, SectionLabel } from '@/components/ui/panels';
 import { listCategories, listProducts } from '@/lib/api/catalog';
@@ -41,7 +41,12 @@ async function CategoryProducts({ storeId, category }: { storeId: string; catego
                   href={`/products/${p.id}`}
                   className="flex items-center gap-2.5 px-3 py-2 hover:bg-selected"
                 >
-                  <InitialThumb name={p.name} size={32} className="rounded-sm" />
+                  <ProductThumb
+                    publicId={p.coverPublicId}
+                    name={p.name}
+                    size={32}
+                    className="rounded-sm"
+                  />
                   <span className="min-w-0 flex-1 truncate text-[13px]/[19px] font-medium">
                     {p.name}
                   </span>

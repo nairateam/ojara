@@ -16,7 +16,7 @@ const SIZES = {
   xs: { box: 'rounded-sm', cell: 'h-[26px] w-7', icon: 'size-3', text: 'text-xs' },
 } as const;
 
-/** Quantity stepper (− n +). Local state only: the storefront cart is a static sample for now. */
+/** Quantity stepper (− n +). Uncontrolled by default; pass `value` + `onChange` to control it. */
 export function QuantityStepper({
   initial = 1,
   max = 10,
@@ -24,6 +24,8 @@ export function QuantityStepper({
   label = 'Quantity',
   name,
   className,
+  value,
+  onChange,
 }: {
   initial?: number;
   max?: number;
@@ -31,8 +33,16 @@ export function QuantityStepper({
   label?: string;
   name?: string;
   className?: string;
+  value?: number;
+  onChange?: (qty: number) => void;
 }) {
-  const [qty, setQty] = useState(initial);
+  const [own, setOwn] = useState(initial);
+  const qty = value ?? own;
+  const setQty = (next: (q: number) => number) => {
+    const n = next(qty);
+    if (onChange) onChange(n);
+    else setOwn(n);
+  };
   const s = SIZES[size];
   return (
     <div

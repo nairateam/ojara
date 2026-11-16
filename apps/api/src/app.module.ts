@@ -9,6 +9,7 @@ import { AdminModule } from './admin/admin.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { BillingModule } from './billing/billing.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
+import { StorefrontModule } from './storefront/storefront.module.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
 import { ClientIpThrottlerGuard } from './common/throttler/client-ip-throttler.guard.js';
 import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storage.js';
@@ -86,6 +87,7 @@ import { UsersModule } from './users/users.module.js';
     UsersModule,
     StoresModule,
     CatalogModule,
+    StorefrontModule,
     InventoryModule,
     OrdersModule,
     PaymentsModule,

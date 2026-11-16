@@ -1,13 +1,11 @@
 import { Mail, MapPin, MessageCircle } from 'lucide-react';
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { InstagramIcon } from '@/components/storefront/instagram-icon';
-import { Eyebrow, StoreField, storeButton, storeInput } from '@/components/storefront/primitives';
-import { cn } from '@/lib/utils';
-import { STORE } from '@/mock/storefront';
+import { Eyebrow, StoreLinkButton } from '@/components/storefront/primitives';
+import { getShop, type HostParams, whatsappLink } from '@/components/storefront/store';
 
-export const metadata: Metadata = { title: 'Our story' };
+export const metadata: Metadata = { title: 'About' };
 
 function Way({
   icon,
@@ -20,7 +18,7 @@ function Way({
   title: string;
   value: string;
   sub: string;
-  href?: string;
+  href?: string | undefined;
 }) {
   const Tag = href ? 'a' : 'div';
   return (
@@ -36,104 +34,78 @@ function Way({
   );
 }
 
-const formInput = cn(storeInput, 'bg-store-page');
+/**
+ * 05.09 About & Contact: the store's contact channels. The story half of the design returns when
+ * merchants can write their own (storefront editor).
+ */
+export default async function AboutPage({ params }: { params: HostParams }) {
+  const { store } = await getShop(params);
+  const whatsapp = whatsappLink(store.whatsappNumber);
+  const ways = [
+    whatsapp && {
+      icon: <MessageCircle className="size-5" aria-hidden />,
+      title: 'WhatsApp',
+      value: whatsapp.label,
+      sub: 'Questions about products, sizes or delivery',
+      href: whatsapp.href,
+    },
+    store.instagramHandle && {
+      icon: <InstagramIcon className="size-5" aria-hidden />,
+      title: 'Instagram',
+      value: `@${store.instagramHandle}`,
+      sub: 'See what’s new',
+      href: `https://instagram.com/${store.instagramHandle}`,
+    },
+    store.contactEmail && {
+      icon: <Mail className="size-5" aria-hidden />,
+      title: 'Email',
+      value: store.contactEmail,
+      sub: 'We’ll reply as soon as we can',
+      href: `mailto:${store.contactEmail}`,
+    },
+    store.state && {
+      icon: <MapPin className="size-5" aria-hidden />,
+      title: 'Based in',
+      value: store.state,
+      sub: 'Nigeria',
+      href: undefined,
+    },
+  ].filter((w) => Boolean(w)) as {
+    icon: ReactNode;
+    title: string;
+    value: string;
+    sub: string;
+    href: string | undefined;
+  }[];
 
-/** 05.09 Our Story & Contact. */
-export default function AboutPage() {
   return (
     <>
-      <section className="flex flex-col md:grid md:min-h-[520px] md:grid-cols-[44%_1fr] xl:grid-cols-[640px_1fr]">
-        <div className="relative h-[320px] md:h-auto">
-          <Image
-            src={STORE.story.image}
-            alt={`${STORE.founder} in a hand-dyed adire dress`}
-            fill
-            priority
-            sizes="(min-width: 768px) 640px, 100vw"
-            className="object-cover"
-          />
-        </div>
-        <div className="flex flex-col justify-center gap-5 bg-store-band px-4 py-10 md:px-10 md:py-14 xl:px-[72px]">
-          <Eyebrow>Our story</Eyebrow>
-          <h1 className="font-serif text-[36px] leading-[1.06] font-medium tracking-[-1.2px] text-store-ink md:text-[52px] md:leading-[55px]">
-            {STORE.story.title}
-          </h1>
-          {STORE.story.paragraphs.map((p) => (
-            <p key={p.slice(0, 24)} className="text-base leading-[26px] text-store-body">
-              {p}
-            </p>
-          ))}
-          <p className="text-sm font-semibold text-store-ink">— {STORE.founder}, founder</p>
+      <section className="flex flex-col gap-5 bg-store-band px-4 py-12 md:px-8 md:py-16 xl:px-16">
+        <Eyebrow>About</Eyebrow>
+        <h1 className="font-serif text-[36px] leading-[1.06] font-medium tracking-[-1.2px] text-store-ink md:text-[52px] md:leading-[55px]">
+          {store.name}
+        </h1>
+        <p className="max-w-[560px] text-base leading-[26px] text-store-body">
+          {store.state ? `An independent store based in ${store.state}. ` : ''}Browse what we have
+          in stock and order online, or get in touch below.
+        </p>
+        <div>
+          <StoreLinkButton href="/shop">Shop now</StoreLinkButton>
         </div>
       </section>
 
-      <section className="flex flex-col gap-10 px-4 py-12 md:px-8 md:py-[72px] lg:flex-row lg:gap-16 xl:px-16">
-        <div className="flex min-w-0 flex-1 flex-col gap-6">
+      {ways.length ? (
+        <section className="flex flex-col gap-6 px-4 py-12 md:px-8 md:py-[72px] xl:px-16">
           <h2 className="font-serif text-[28px] font-medium tracking-[-0.6px] text-store-ink md:text-[34px]">
-            Visit or get in touch
+            Get in touch
           </h2>
-          <div className="grid gap-3.5 sm:grid-cols-2">
-            <Way
-              icon={<MessageCircle className="size-5" aria-hidden />}
-              title="WhatsApp"
-              value={STORE.whatsapp}
-              sub="Fastest — we reply within the hour"
-              href={STORE.whatsappHref}
-            />
-            <Way
-              icon={<InstagramIcon className="size-5" aria-hidden />}
-              title="Instagram"
-              value={STORE.instagram}
-              sub="New drops every Friday"
-              href={STORE.instagramHref}
-            />
-            <Way
-              icon={<Mail className="size-5" aria-hidden />}
-              title="Email"
-              value={STORE.email}
-              sub="For wholesale and custom orders"
-              href={`mailto:${STORE.email}`}
-            />
-            <Way
-              icon={<MapPin className="size-5" aria-hidden />}
-              title="Studio & pickup"
-              value={STORE.address}
-              sub={STORE.hours}
-            />
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+            {ways.map((w) => (
+              <Way key={w.title} {...w} />
+            ))}
           </div>
-        </div>
-        <form className="flex flex-col gap-4 rounded-[14px] border border-store-border bg-store-card p-5 md:p-7 lg:w-[480px] lg:shrink-0">
-          <h2 className="font-serif text-[22px] font-medium text-store-ink">Send us a message</h2>
-          <StoreField label="Your name" htmlFor="contact-name">
-            <input
-              id="contact-name"
-              name="name"
-              autoComplete="name"
-              placeholder="e.g. Funke Adebayo"
-              className={formInput}
-            />
-          </StoreField>
-          <StoreField label="Phone or email" htmlFor="contact-reply">
-            <input
-              id="contact-reply"
-              name="reply"
-              placeholder="So we can reply"
-              className={formInput}
-            />
-          </StoreField>
-          <StoreField label="Message" htmlFor="contact-message">
-            <textarea
-              id="contact-message"
-              name="message"
-              placeholder="Ask about sizing, custom orders or delivery…"
-              className={cn(formInput, 'h-[110px] resize-none')}
-            />
-          </StoreField>
-          <button type="submit" className={storeButton('primary', 'h-12 w-full py-0')}>
-            Send message
-          </button>
-        </form>
-      </section>
+        </section>
+      ) : null}
     </>
   );
 }

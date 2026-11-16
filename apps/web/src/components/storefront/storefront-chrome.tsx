@@ -6,23 +6,16 @@ import {
   MessageCircle,
   Search,
   ShoppingBag,
-  Truck,
   X,
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { StoreLogoTile } from '@/components/brand/store-logo-tile';
 import { PoweredByOjara, Wordmark } from '@/components/brand/wordmark';
+import type { StorefrontStoreDto } from '@ojara/shared';
 import { cn } from '@/lib/utils';
-import { CART_COUNT, CATEGORIES, STORE } from '@/mock/storefront';
+import { CartCount } from './cart';
 import { NavLinks } from './nav-links';
-import { CartIconLink, storeButton } from './primitives';
-
-const NAV = [
-  { href: '/shop', label: 'Shop all' },
-  ...CATEGORIES.map((c) => ({ href: `/shop/${c.slug}`, label: c.navLabel })),
-  { href: '/about', label: 'Our story' },
-];
+import { CartIconLink } from './primitives';
 
 const BRAND_SIZES = {
   lg: { tile: 36, text: 'text-[22px]' },
@@ -62,23 +55,24 @@ export function StoreBrand({
   );
 }
 
-/** Merchant-coloured announcement bar (desktop copy / shorter mobile copy). */
-export function AnnouncementBar() {
-  return (
-    <div className="flex items-center justify-center gap-2 bg-store-primary px-3 py-[7px] text-center text-2xs font-medium text-store-primary-fg md:py-[9px] md:text-xs">
-      <Truck className="hidden size-3.5 shrink-0 md:block" aria-hidden />
-      <span className="md:hidden">{STORE.announcementShort}</span>
-      <span className="hidden md:inline">{STORE.announcement}</span>
-    </div>
-  );
-}
-
 /**
  * Storefront header (05.01 desktop / 05.12 mobile). Desktop: brand (300) · centred nav ·
  * search pill, WhatsApp and cart (300). Mobile: menu · centred brand · search + cart. The mobile
  * menu is a native <details> disclosure, so the header ships no JS beyond the active-link island.
  */
-export function StorefrontHeader({ storeName }: { storeName: string }) {
+export function StorefrontHeader({
+  store,
+  whatsappHref,
+}: {
+  store: StorefrontStoreDto;
+  whatsappHref: string | null;
+}) {
+  const storeName = store.name;
+  const NAV = [
+    { href: '/shop', label: 'Shop all' },
+    ...store.categories.map((c) => ({ href: `/shop/${c.slug}`, label: c.name })),
+    { href: '/about', label: 'About' },
+  ];
   return (
     <header className="relative z-20 border-b border-store-border bg-store-page">
       <div className="grid grid-cols-[auto_1fr_auto] items-center px-4 pt-2 pb-3 md:px-8 md:py-[18px] lg:grid-cols-[260px_1fr_260px] xl:grid-cols-[300px_1fr_300px] xl:px-16">
@@ -117,19 +111,15 @@ export function StorefrontHeader({ storeName }: { storeName: string }) {
           <Link href="/shop" aria-label="Search products" className="xl:hidden">
             <Search className="size-5" aria-hidden />
           </Link>
-          <a href={STORE.whatsappHref} aria-label="Chat on WhatsApp" className="hidden md:block">
-            <MessageCircle className="size-5" aria-hidden />
-          </a>
+          {whatsappHref ? (
+            <a href={whatsappHref} aria-label="Chat on WhatsApp" className="hidden md:block">
+              <MessageCircle className="size-5" aria-hidden />
+            </a>
+          ) : null}
           <CartIconLink className="md:hidden" />
-          <Link
-            href="/cart"
-            aria-label={`Cart, ${CART_COUNT} items`}
-            className="hidden items-center gap-1.5 md:flex"
-          >
+          <Link href="/cart" aria-label="Cart" className="hidden items-center gap-1.5 md:flex">
             <ShoppingBag className="size-5" aria-hidden />
-            <span className="flex size-5 items-center justify-center rounded-full bg-store-primary text-2xs font-bold text-store-primary-fg">
-              {CART_COUNT}
-            </span>
+            <CartCount className="flex size-5 items-center justify-center rounded-full bg-store-primary text-2xs font-bold text-store-primary-fg" />
           </Link>
         </div>
       </div>
@@ -139,23 +129,29 @@ export function StorefrontHeader({ storeName }: { storeName: string }) {
 
 /** Storefront footer (05.01): ink background, about + Shop / Help / Contact, "Powered by ojara". */
 export function StorefrontFooter({
-  storeName,
-  showPoweredBy,
+  store,
+  whatsapp,
 }: {
-  storeName: string;
-  showPoweredBy: boolean;
+  store: StorefrontStoreDto;
+  whatsapp: { href: string; label: string } | null;
 }) {
   const link = 'text-ui text-store-footer-fg hover:text-white';
   return (
     <footer className="flex flex-col gap-10 bg-store-ink px-4 pt-12 pb-7 md:px-8 md:pt-14 xl:px-16">
       <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:flex md:gap-12">
         <div className="col-span-2 flex flex-col gap-3 md:mr-auto">
-          <span className="font-serif text-[22px] font-semibold text-white">{storeName}</span>
-          <p className="max-w-[280px] text-ui leading-5 text-store-footer-fg">{STORE.tagline}</p>
+          <span className="font-serif text-[22px] font-semibold text-white">{store.name}</span>
+          <p className="max-w-[280px] text-ui leading-5 text-store-footer-fg">
+            {store.state ? `Based in ${store.state}. ` : ''}Shop online, or message us with any
+            questions.
+          </p>
         </div>
         <div className="flex flex-col gap-2.5 md:w-[140px] xl:w-[180px]">
           <span className="text-ui font-semibold text-white">Shop</span>
-          {CATEGORIES.map((c) => (
+          <Link href="/shop" className={link}>
+            Shop all
+          </Link>
+          {store.categories.map((c) => (
             <Link key={c.slug} href={`/shop/${c.slug}`} className={link}>
               {c.name}
             </Link>
@@ -169,32 +165,36 @@ export function StorefrontFooter({
           <Link href="/policies/returns" className={link}>
             Returns &amp; exchanges
           </Link>
-          <Link href="/track" className={link}>
-            Track an order
-          </Link>
-          <Link href="/policies/size-guide" className={link}>
-            Size guide
+          <Link href="/about" className={link}>
+            About us
           </Link>
         </div>
-        <div className="col-span-2 flex flex-col gap-2.5 md:w-[240px] xl:w-[280px]">
-          <span className="text-ui font-semibold text-white">Contact</span>
-          <a href={STORE.whatsappHref} className={link}>
-            WhatsApp: {STORE.whatsapp}
-          </a>
-          <a href={STORE.instagramHref} className={link}>
-            Instagram: {STORE.instagram}
-          </a>
-          <a href={`mailto:${STORE.email}`} className={link}>
-            {STORE.email}
-          </a>
-          <span className="text-ui text-store-footer-fg">{STORE.address}</span>
-        </div>
+        {whatsapp || store.instagramHandle || store.contactEmail ? (
+          <div className="col-span-2 flex flex-col gap-2.5 md:w-[240px] xl:w-[280px]">
+            <span className="text-ui font-semibold text-white">Contact</span>
+            {whatsapp ? (
+              <a href={whatsapp.href} className={link}>
+                WhatsApp: {whatsapp.label}
+              </a>
+            ) : null}
+            {store.instagramHandle ? (
+              <a href={`https://instagram.com/${store.instagramHandle}`} className={link}>
+                Instagram: @{store.instagramHandle}
+              </a>
+            ) : null}
+            {store.contactEmail ? (
+              <a href={`mailto:${store.contactEmail}`} className={link}>
+                {store.contactEmail}
+              </a>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       <div className="flex flex-col items-start justify-between gap-3 border-t border-store-footer-line pt-5 sm:flex-row sm:items-center">
         <span className="text-xs text-store-muted">
-          © {new Date().getFullYear()} {storeName}. Prices in Nigerian naira (₦).
+          © {new Date().getFullYear()} {store.name}. Prices in Nigerian naira (₦).
         </span>
-        {showPoweredBy ? <PoweredByOjara /> : null}
+        {store.removeBranding ? null : <PoweredByOjara />}
       </div>
     </footer>
   );
@@ -314,47 +314,12 @@ export function StoreClosed({ storeName }: { storeName: string }) {
     <main className="relative flex min-h-dvh flex-col items-center justify-center bg-store-page px-4 pt-12 pb-24 font-sans text-store-ink">
       <div className="flex w-full max-w-[560px] flex-col items-center gap-[22px] text-center">
         <StoreBrand storeName={storeName} size="xl" href={null} />
-        <div className="relative h-[180px] w-full overflow-hidden rounded-[14px] bg-store-band sm:h-[240px]">
-          <Image
-            src={STORE.closed.image}
-            alt="Indigo adire fabric"
-            fill
-            sizes="(min-width: 640px) 560px, 100vw"
-            className="object-cover"
-            priority
-          />
-        </div>
         <h1 className="font-serif text-[32px] leading-tight font-medium tracking-[-0.8px] md:text-[40px]">
           We’re taking a short break
         </h1>
-        <p className="text-base leading-[25px] text-store-body">{STORE.closed.body}</p>
-        <form
-          className="flex w-full flex-col gap-2.5 sm:flex-row"
-          aria-label="Get a text when we reopen"
-        >
-          <label className="flex flex-1 items-center gap-2 rounded-md border border-store-border bg-store-card px-3.5 py-[13px] focus-within:border-store-primary">
-            <span className="text-sm text-store-body">+234</span>
-            <input
-              type="tel"
-              name="phone"
-              inputMode="tel"
-              autoComplete="tel-national"
-              placeholder="Your phone number"
-              aria-label="Your phone number"
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-store-muted"
-            />
-          </label>
-          <button type="submit" className={storeButton('primary', 'px-5 py-[13px] text-sm')}>
-            Text me
-          </button>
-        </form>
-        <a
-          href={STORE.whatsappHref}
-          className="flex items-center gap-2 text-sm font-semibold text-store-primary"
-        >
-          <MessageCircle className="size-4" aria-hidden />
-          Have an open order? WhatsApp {STORE.whatsapp}
-        </a>
+        <p className="text-base leading-[25px] text-store-body">
+          {storeName} isn’t taking orders right now. Please check back soon.
+        </p>
       </div>
       <a
         href="https://ojara.store"

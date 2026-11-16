@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 /**
@@ -51,5 +52,31 @@ export function InitialThumb({
     >
       {name.trim().charAt(0).toUpperCase() || '•'}
     </span>
+  );
+}
+
+/** Product photo thumbnail from a Cloudinary public_id, or the initial tile when there is none. */
+export function ProductThumb({
+  publicId,
+  name,
+  size = 40,
+  className,
+}: {
+  publicId: string | null;
+  name: string;
+  size?: number;
+  className?: string;
+}) {
+  if (!publicId) return <InitialThumb name={name} size={size} className={className} />;
+  return (
+    <Image
+      src={publicId}
+      alt=""
+      width={size}
+      height={size}
+      sizes={`${size}px`}
+      style={{ width: size, height: size }}
+      className={cn('shrink-0 rounded-md bg-surface-muted object-cover', className)}
+    />
   );
 }

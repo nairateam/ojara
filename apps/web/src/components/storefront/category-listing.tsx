@@ -1,16 +1,54 @@
-import { Check, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import type { StorefrontListDto, StorefrontStoreDto } from '@ojara/shared';
+import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { CATEGORIES, type Category, PRODUCTS, type Product, productsIn } from '@/mock/storefront';
-import { Breadcrumb, ProductCard } from './primitives';
+import { Breadcrumb, ProductCard, storeButton } from './primitives';
 
-const SIZES = ['S', 'M', 'L', 'XL'];
-const COLOURS = [
-  { name: 'Indigo', swatch: '#2A3A7C' },
-  { name: 'Rust', swatch: '#B5532E' },
-  { name: 'Multicolour', swatch: '#D9A441' },
-];
+export interface ListingParams {
+  q?: string | undefined;
+  sort: 'newest' | 'price-asc' | 'price-desc';
+  /** Naira, as typed in the price boxes. */
+  min?: string | undefined;
+  max?: string | undefined;
+  inStock: boolean;
+  page: number;
+}
+
+/** Reads the listing's query string (shared by /shop and /shop/:category). */
+export function parseListingParams(
+  sp: Record<string, string | string[] | undefined>,
+): ListingParams {
+  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)?.trim();
+  const sort = one(sp.sort);
+  return {
+    q: one(sp.q) || undefined,
+    sort: sort === 'price-asc' || sort === 'price-desc' ? sort : 'newest',
+    min: one(sp.min) || undefined,
+    max: one(sp.max) || undefined,
+    inStock: one(sp.inStock) === '1',
+    page: Math.max(1, Number(one(sp.page)) || 1),
+  };
+}
+
+/** Naira text ("₦10,000") -> kobo for the API; undefined when blank or not a number. */
+export function nairaParamToKobo(text: string | undefined): number | undefined {
+  if (!text) return undefined;
+  const n = Number(text.replace(/[₦,\s]/g, ''));
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : undefined;
+}
+
+function pageHref(basePath: string, params: ListingParams, page: number): string {
+  const qs = new URLSearchParams();
+  if (params.q) qs.set('q', params.q);
+  if (params.sort !== 'newest') qs.set('sort', params.sort);
+  if (params.min) qs.set('min', params.min);
+  if (params.max) qs.set('max', params.max);
+  if (params.inStock) qs.set('inStock', '1');
+  if (page > 1) qs.set('page', String(page));
+  const s = qs.toString();
+  return s ? `${basePath}?${s}` : basePath;
+}
 
 function FilterGroup({
   title,
@@ -33,23 +71,34 @@ function FilterGroup({
   );
 }
 
-/** 05.02 filter sidebar. A GET form (no client JS); options are sample values for now. */
-function Filters({ active }: { active?: Category }) {
+const priceInput =
+  'w-0 min-w-0 flex-1 rounded-sm border border-store-border bg-store-card px-2.5 py-2 text-ui text-store-ink outline-none focus:border-store-primary';
+
+/** 05.02 filter sidebar: a GET form, so it works without client JS. */
+function Filters({
+  store,
+  activeSlug,
+  params,
+  basePath,
+}: {
+  store: StorefrontStoreDto;
+  activeSlug: string | undefined;
+  params: ListingParams;
+  basePath: string;
+}) {
   return (
-    <form action={active ? `/shop/${active.slug}` : '/shop'} className="flex flex-col gap-[26px]">
+    <form action={basePath} className="flex flex-col gap-[26px]">
+      {params.q ? <input type="hidden" name="q" value={params.q} /> : null}
+      {params.sort !== 'newest' ? <input type="hidden" name="sort" value={params.sort} /> : null}
       <FilterGroup title="Category">
         <ul className="flex flex-col gap-3">
           {[
-            { slug: '', name: 'Shop all', count: PRODUCTS.length },
-            ...CATEGORIES.map((c) => ({
-              slug: c.slug,
-              name: c.name,
-              count: productsIn(c.slug).length,
-            })),
+            { slug: '', name: 'Shop all', count: store.productCount },
+            ...store.categories.map((c) => ({ slug: c.slug, name: c.name, count: c.productCount })),
           ].map((c) => {
-            const isActive = (active?.slug ?? '') === c.slug;
+            const isActive = (activeSlug ?? '') === c.slug;
             return (
-              <li key={c.name}>
+              <li key={c.slug || 'all'}>
                 <Link
                   href={c.slug ? `/shop/${c.slug}` : '/shop'}
                   aria-current={isActive ? 'page' : undefined}
@@ -67,65 +116,35 @@ function Filters({ active }: { active?: Category }) {
           })}
         </ul>
       </FilterGroup>
-      <FilterGroup title="Size">
-        <div className="flex flex-wrap gap-2">
-          {SIZES.map((s) => (
-            <label key={s} className="cursor-pointer">
-              <input type="checkbox" name="size" value={s} className="peer sr-only" />
-              <span className="flex h-9 w-11 items-center justify-center rounded-sm border border-store-border bg-store-card text-ui font-semibold text-store-ink peer-checked:border-store-ink peer-checked:bg-store-ink peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-store-primary">
-                {s}
-              </span>
-            </label>
-          ))}
-        </div>
-      </FilterGroup>
-      <FilterGroup title="Colour">
-        <div className="flex flex-col gap-3">
-          {COLOURS.map((c) => (
-            <label key={c.name} className="flex cursor-pointer items-center gap-2.5 text-sm">
-              <span className="relative flex size-[18px]">
-                <input
-                  type="checkbox"
-                  name="colour"
-                  value={c.name.toLowerCase()}
-                  className="peer size-full appearance-none rounded-xs border-[1.5px] border-store-muted/60 bg-store-card checked:border-store-primary checked:bg-store-primary focus-visible:outline-2 focus-visible:outline-store-primary"
-                />
-                <Check
-                  className="pointer-events-none absolute inset-0 m-auto size-3 text-store-primary-fg opacity-0 peer-checked:opacity-100"
-                  aria-hidden
-                />
-              </span>
-              <span
-                className="size-3.5 rounded-full"
-                style={{ backgroundColor: c.swatch }}
-                aria-hidden
-              />
-              <span className="text-store-ink">{c.name}</span>
-            </label>
-          ))}
-        </div>
-      </FilterGroup>
-      <FilterGroup title="Price">
+      <FilterGroup title="Price (₦)">
         <div className="flex items-center gap-2">
           <input
             name="min"
             inputMode="numeric"
-            defaultValue="₦10,000"
-            aria-label="Minimum price"
-            className="w-0 min-w-0 flex-1 rounded-sm border border-store-border bg-store-card px-2.5 py-2 text-ui text-store-ink outline-none focus:border-store-primary"
+            defaultValue={params.min}
+            placeholder="Min"
+            aria-label="Minimum price in naira"
+            className={priceInput}
           />
           <span className="text-sm text-store-body">–</span>
           <input
             name="max"
             inputMode="numeric"
-            defaultValue="₦30,000"
-            aria-label="Maximum price"
-            className="w-0 min-w-0 flex-1 rounded-sm border border-store-border bg-store-card px-2.5 py-2 text-ui text-store-ink outline-none focus:border-store-primary"
+            defaultValue={params.max}
+            placeholder="Max"
+            aria-label="Maximum price in naira"
+            className={priceInput}
           />
         </div>
       </FilterGroup>
       <label className="flex cursor-pointer items-center gap-2.5 text-sm text-store-ink">
-        <input type="checkbox" name="inStock" value="1" className="peer sr-only" />
+        <input
+          type="checkbox"
+          name="inStock"
+          value="1"
+          defaultChecked={params.inStock}
+          className="peer sr-only"
+        />
         <span
           aria-hidden
           className="flex h-5 w-[34px] items-center rounded-[10px] bg-store-border p-0.5 transition-colors peer-checked:bg-store-primary peer-checked:[&>span]:translate-x-3.5 peer-focus-visible:outline-2 peer-focus-visible:outline-store-primary"
@@ -134,22 +153,30 @@ function Filters({ active }: { active?: Category }) {
         </span>
         In stock only
       </label>
-      <button type="submit" className="sr-only">
+      <button type="submit" className={storeButton('ink', 'py-2.5 text-ui')}>
         Apply filters
       </button>
     </form>
   );
 }
 
-/** 05.02 Category / Shop all listing: breadcrumb, Fraunces title, filter sidebar, 3-col grid. */
-export function CategoryListing({ category, query }: { category?: Category; query?: string }) {
-  let products: Product[] = category ? productsIn(category.slug) : PRODUCTS;
-  if (query) {
-    const q = query.toLowerCase();
-    products = products.filter((p) => p.name.toLowerCase().includes(q));
-  }
-  const title = query ? `Results for “${query}”` : (category?.name ?? 'Shop all');
-  const noun = category?.noun ?? 'pieces';
+/** 05.02 Category / Shop all listing: breadcrumb, title, filter sidebar, grid, pages. */
+export function CategoryListing({
+  store,
+  list,
+  params,
+  basePath,
+}: {
+  store: StorefrontStoreDto;
+  list: StorefrontListDto;
+  params: ListingParams;
+  basePath: string;
+}) {
+  const category = list.category;
+  const title = params.q ? `Results for “${params.q}”` : (category?.name ?? 'Shop all');
+  const lastPage = Math.max(1, Math.ceil(list.total / list.pageSize));
+  const filtered = Boolean(params.min || params.max || params.inStock);
+
   return (
     <div className="flex flex-col gap-6 px-4 pt-5 pb-14 md:gap-7 md:px-8 md:pt-7 md:pb-[72px] xl:px-16">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
@@ -164,21 +191,28 @@ export function CategoryListing({ category, query }: { category?: Category; quer
           <h1 className="font-serif text-[36px] font-medium tracking-[-1px] text-store-ink md:text-5xl">
             {title}
           </h1>
-          <p className="text-sm text-store-body md:text-title">
-            {category?.description ?? 'Everything we make — hand-dyed and woven in small batches.'}
-          </p>
+          {category?.description ? (
+            <p className="text-sm text-store-body md:text-title">{category.description}</p>
+          ) : null}
         </div>
-        <div className="flex items-center justify-between gap-2.5 md:justify-end">
+        <form
+          action={basePath}
+          className="flex items-center justify-between gap-2.5 md:justify-end"
+        >
+          {params.q ? <input type="hidden" name="q" value={params.q} /> : null}
+          {params.min ? <input type="hidden" name="min" value={params.min} /> : null}
+          {params.max ? <input type="hidden" name="max" value={params.max} /> : null}
+          {params.inStock ? <input type="hidden" name="inStock" value="1" /> : null}
           <span className="text-ui text-store-body">
-            {products.length} {noun}
+            {list.total === 1 ? '1 product' : `${list.total} products`}
           </span>
           <label className="relative flex items-center">
             <span className="sr-only">Sort products</span>
             <select
-              defaultValue="best"
+              name="sort"
+              defaultValue={params.sort}
               className="appearance-none rounded-md border border-store-border bg-store-card py-[9px] pr-8 pl-3 text-ui font-medium text-store-ink"
             >
-              <option value="best">Sort: Best selling</option>
               <option value="newest">Sort: Newest</option>
               <option value="price-asc">Sort: Price, low to high</option>
               <option value="price-desc">Sort: Price, high to low</option>
@@ -188,7 +222,10 @@ export function CategoryListing({ category, query }: { category?: Category; quer
               aria-hidden
             />
           </label>
-        </div>
+          <button type="submit" className="text-ui font-semibold text-store-primary">
+            Sort
+          </button>
+        </form>
       </div>
       <div className="flex flex-col gap-6 md:flex-row md:gap-10">
         <details className="group/filters rounded-md border border-store-border bg-store-card md:hidden">
@@ -201,30 +238,57 @@ export function CategoryListing({ category, query }: { category?: Category; quer
             />
           </summary>
           <div className="border-t border-store-border p-4">
-            <Filters active={category} />
+            <Filters
+              store={store}
+              activeSlug={category?.slug}
+              params={params}
+              basePath={basePath}
+            />
           </div>
         </details>
         <aside className="hidden w-[200px] shrink-0 md:block xl:w-[240px]">
-          <Filters active={category} />
+          <Filters store={store} activeSlug={category?.slug} params={params} basePath={basePath} />
         </aside>
         <div className="flex min-w-0 flex-1 flex-col gap-5">
-          {products.length ? (
+          {list.items.length ? (
             <div className="grid grid-cols-2 gap-x-3 gap-y-6 md:gap-5 lg:grid-cols-3">
-              {products.map((p) => (
+              {list.items.map((p) => (
                 <ProductCard key={p.slug} product={p} variant="listing" />
               ))}
             </div>
           ) : (
             <p className="py-16 text-center text-sm text-store-body">
-              Nothing matches that search yet.{' '}
+              {params.q || filtered ? 'Nothing matches that yet. ' : 'No products here yet. '}
               <Link href="/shop" className="font-semibold text-store-primary">
                 See everything
               </Link>
             </p>
           )}
-          {products.length ? (
+          {lastPage > 1 ? (
+            <nav aria-label="Pages" className="flex items-center justify-center gap-4 py-3 text-ui">
+              {params.page > 1 ? (
+                <Link
+                  href={pageHref(basePath, params, params.page - 1)}
+                  className="font-semibold text-store-primary"
+                >
+                  Previous
+                </Link>
+              ) : null}
+              <span className="text-store-body">
+                Page {params.page} of {lastPage}
+              </span>
+              {params.page < lastPage ? (
+                <Link
+                  href={pageHref(basePath, params, params.page + 1)}
+                  className="font-semibold text-store-primary"
+                >
+                  Next
+                </Link>
+              ) : null}
+            </nav>
+          ) : list.items.length ? (
             <p className="py-3 text-center text-ui text-store-body">
-              You’ve seen all {products.length} {noun}
+              You’ve seen all {list.total === 1 ? '1 product' : `${list.total} products`}
             </p>
           ) : null}
         </div>

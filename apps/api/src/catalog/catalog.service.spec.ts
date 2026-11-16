@@ -24,6 +24,7 @@ const row = (over: Record<string, unknown> = {}) => ({
   updatedAt: now,
   archivedAt: null,
   variants: [],
+  images: [],
   ...over,
 });
 
@@ -52,6 +53,14 @@ function setup(
     used?: number;
     existing?: Record<string, unknown> | null;
     variantCreateMany?: () => Promise<unknown>;
+    asset?: {
+      publicId: string;
+      width: number;
+      height: number;
+      format: string;
+      bytes: number;
+    } | null;
+    images?: { id: string }[];
     categories?: { name: string; slug: string; position: number }[];
   } = {},
 ) {
@@ -80,12 +89,38 @@ function setup(
         Promise.resolve({ id: 'c1', ...args.data }),
       ),
     },
+    productImage: {
+      aggregate: vi.fn().mockResolvedValue({ _max: { position: 1 } }),
+      create: vi.fn().mockResolvedValue({}),
+      findFirst: vi
+        .fn()
+        .mockResolvedValue({ id: 'i1', cloudinaryPublicId: 'ojara/test/s1/product/a' }),
+      findMany: vi.fn().mockResolvedValue(opts.images ?? []),
+      delete: vi.fn().mockResolvedValue({}),
+      update: vi.fn().mockResolvedValue({}),
+    },
     auditLog: { create: vi.fn().mockResolvedValue({}) },
   };
   const prisma = {
     tenantTransaction: vi.fn((fn: (t: typeof tx) => Promise<unknown>) => fn(tx)),
   } as unknown as PrismaService;
-  return { service: new CatalogService(prisma), tx };
+  const images = {
+    getAsset: vi.fn().mockResolvedValue(
+      opts.asset === undefined
+        ? {
+            publicId: 'ojara/test/s1/product/a',
+            width: 800,
+            height: 1000,
+            format: 'jpg',
+            bytes: 200_000,
+          }
+        : opts.asset,
+    ),
+    delete: vi.fn().mockResolvedValue(undefined),
+    createUploadSignature: vi.fn(),
+    buildUrl: vi.fn(),
+  };
+  return { service: new CatalogService(prisma, images), tx, images };
 }
 
 describe('CatalogService products', () => {
@@ -230,5 +265,56 @@ describe('CatalogService categories', () => {
     await expect(service.createCategory('s1', 'u1', { name: 'dresses' })).rejects.toBeInstanceOf(
       ConflictException,
     );
+  });
+});
+
+describe('CatalogService images', () => {
+  it('registers an uploaded photo using Cloudinary’s own dimensions, at the end', async () => {
+    const { service, tx } = setup({ existing: { id: 'p1', _count: { images: 2 } } });
+    await service.addImage('s1', 'u1', 'p1', 'ojara/test/s1/product/a');
+    expect(tx.productImage.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        storeId: 's1',
+        productId: 'p1',
+        cloudinaryPublicId: 'ojara/test/s1/product/a',
+        width: 800,
+        height: 1000,
+        position: 2,
+      }),
+    });
+  });
+
+  it('refuses photos beyond the plan limit and deletes the orphaned upload', async () => {
+    const { service, tx, images } = setup({ existing: { id: 'p1', _count: { images: 3 } } });
+    await expect(
+      service.addImage('s1', 'u1', 'p1', 'ojara/test/s1/product/a'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(tx.productImage.create).not.toHaveBeenCalled();
+    expect(images.delete).toHaveBeenCalledWith('ojara/test/s1/product/a', 's1');
+  });
+
+  it('rejects an upload Cloudinary doesn’t have', async () => {
+    const { service, tx } = setup({ asset: null, existing: { id: 'p1', _count: { images: 0 } } });
+    await expect(service.addImage('s1', 'u1', 'p1', 'ojara/test/s1/product/x')).rejects.toThrow(
+      'wasn’t found',
+    );
+    expect(tx.productImage.create).not.toHaveBeenCalled();
+  });
+
+  it('removes a photo, renumbers the rest and deletes the file', async () => {
+    const { service, tx, images } = setup({ images: [{ id: 'i2' }, { id: 'i3' }] });
+    await service.removeImage('s1', 'u1', 'p1', 'i1');
+    expect(tx.productImage.delete).toHaveBeenCalledWith({ where: { id: 'i1' } });
+    expect(tx.productImage.update.mock.calls).toEqual([
+      [{ where: { id: 'i2' }, data: { position: 0 } }],
+      [{ where: { id: 'i3' }, data: { position: 1 } }],
+    ]);
+    expect(images.delete).toHaveBeenCalledWith('ojara/test/s1/product/a', 's1');
+  });
+
+  it('still succeeds when the Cloudinary delete fails', async () => {
+    const { service, images } = setup();
+    images.delete.mockRejectedValue(new Error('network'));
+    await expect(service.removeImage('s1', 'u1', 'p1', 'i1')).resolves.toBeDefined();
   });
 });

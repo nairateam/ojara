@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { SearchField } from '@/components/dashboard/filters';
 import { LinkTabs } from '@/components/dashboard/link-tabs';
 import { PlanLimitCard, PlanUsageBanner } from '@/components/dashboard/system-states';
-import { InitialThumb } from '@/components/dashboard/thumb';
+import { ProductThumb } from '@/components/dashboard/thumb';
 import { StatusPill, Tag } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -180,7 +180,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
               <TableRow key={p.id}>
                 <TableCell className="pl-4 md:pl-[18px]">
                   <Link href={`/products/${p.id}`} className="flex items-center gap-2.5">
-                    <InitialThumb name={p.name} size={40} />
+                    <ProductThumb publicId={p.coverPublicId} name={p.name} size={40} />
                     <span className="flex min-w-0 flex-col gap-0.5">
                       <span className="text-[13px]/[19px] font-semibold hover:underline">
                         {p.name}

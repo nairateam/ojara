@@ -1,12 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { apiSignRequest, destroy } = vi.hoisted(() => ({
+const { apiSignRequest, destroy, resource } = vi.hoisted(() => ({
   apiSignRequest: vi.fn(() => 'signed-hash'),
   destroy: vi.fn(() => Promise.resolve({ result: 'ok' })),
+  resource: vi.fn((): Promise<unknown> =>
+    Promise.resolve({
+      public_id: 'ojara/test/store_a/product/abc',
+      width: 800,
+      height: 600,
+      format: 'jpg',
+      bytes: 1234,
+    }),
+  ),
 }));
 
 vi.mock('cloudinary', () => ({
-  v2: { utils: { api_sign_request: apiSignRequest }, uploader: { destroy }, config: vi.fn() },
+  v2: {
+    utils: { api_sign_request: apiSignRequest },
+    uploader: { destroy },
+    api: { resource },
+    config: vi.fn(),
+  },
 }));
 
 const { CloudinaryImageService } = await import('./cloudinary-image.service.js');
@@ -23,6 +37,7 @@ describe('CloudinaryImageService', () => {
   beforeEach(() => {
     apiSignRequest.mockClear();
     destroy.mockClear();
+    resource.mockClear();
   });
 
   it('signs uploads into a server-chosen store folder', () => {
@@ -63,6 +78,34 @@ describe('CloudinaryImageService', () => {
     expect(service.buildUrl('ojara/test/store_a/product/abc', 'thumb')).toBe(
       'https://res.cloudinary.com/ojara-test/image/upload/c_fill,w_160,h_160,f_auto,q_auto/ojara/test/store_a/product/abc',
     );
+  });
+
+  it('looks up uploaded assets only inside the store’s folder for that kind', async () => {
+    const service = new CloudinaryImageService(config);
+    await expect(
+      service.getAsset('ojara/test/store_a/product/abc', 'store_a', 'product'),
+    ).resolves.toEqual({
+      publicId: 'ojara/test/store_a/product/abc',
+      width: 800,
+      height: 600,
+      format: 'jpg',
+      bytes: 1234,
+    });
+    await expect(
+      service.getAsset('ojara/test/store_b/product/abc', 'store_a', 'product'),
+    ).rejects.toThrow(/does not belong/);
+    await expect(
+      service.getAsset('ojara/test/store_a/logo/abc', 'store_a', 'product'),
+    ).rejects.toThrow(/does not belong/);
+    expect(resource).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns null for an asset Cloudinary doesn’t have', async () => {
+    resource.mockRejectedValueOnce({ error: { http_code: 404, message: 'Resource not found' } });
+    const service = new CloudinaryImageService(config);
+    await expect(
+      service.getAsset('ojara/test/store_a/product/gone', 'store_a', 'product'),
+    ).resolves.toBeNull();
   });
 
   it('throws a typed error when not configured', () => {

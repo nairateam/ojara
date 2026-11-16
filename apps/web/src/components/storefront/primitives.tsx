@@ -1,10 +1,10 @@
-import { formatKobo } from '@ojara/shared';
+import { formatKobo, type StorefrontProductCardDto } from '@ojara/shared';
 import { ChevronLeft, ChevronRight, MessageCircle, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ComponentProps, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { CART_COUNT, type Product, STORE } from '@/mock/storefront';
+import { CartCount } from './cart';
 
 /* ---------------------------------------------------------------------------------------------
  * Buttons (merchant colour). Primary: store-primary, Inter 15/600, radius 8, padding 14 24.
@@ -100,13 +100,46 @@ export function Breadcrumb({ items }: { items: { label: string; href?: string }[
  * Product card + tags
  * ------------------------------------------------------------------------------------------- */
 
-/** "New" indigo; "Sold out" ink; "Sale" rust; stock note = light pill with rust text. */
-export function ProductTag({ product }: { product: Product }) {
+/** "New" indigo; "Sold out" ink; "Sale" rust. */
+export function ProductTag({ product }: { product: StorefrontProductCardDto }) {
   const base = 'rounded-sm px-[9px] py-1 text-2xs font-bold';
   if (product.soldOut) return <span className={cn(base, 'bg-store-ink text-white')}>Sold out</span>;
-  if (product.compareAtPrice)
+  if (product.compareAtKobo !== null)
     return <span className={cn(base, 'bg-store-eyebrow text-white')}>Sale</span>;
   return null;
+}
+
+/** Product photo from a Cloudinary public_id, or the store's colour band with the initial. */
+export function StorePhoto({
+  publicId,
+  alt,
+  sizes,
+  priority,
+  className,
+}: {
+  publicId: string | null;
+  alt: string;
+  sizes: string;
+  priority?: boolean;
+  className?: string;
+}) {
+  return publicId ? (
+    <Image
+      src={publicId}
+      alt={alt}
+      fill
+      sizes={sizes}
+      priority={priority}
+      className={cn('object-cover', className)}
+    />
+  ) : (
+    <span
+      aria-hidden
+      className="absolute inset-0 flex items-center justify-center font-serif text-5xl text-store-muted"
+    >
+      {alt.trim().charAt(0).toUpperCase()}
+    </span>
+  );
 }
 
 export function ProductCard({
@@ -114,26 +147,19 @@ export function ProductCard({
   variant = 'home',
   className,
 }: {
-  product: Product;
-  /** `home`: 360 image + sizes line; `listing`: 400 image, overlay note/New tag; `mobile`: compact. */
+  product: StorefrontProductCardDto;
+  /** `home`: 360 image + options line; `listing`: 400 image, New tag; `mobile`: compact. */
   variant?: 'home' | 'listing' | 'mobile';
   className?: string;
 }) {
-  const onSale = Boolean(product.compareAtPrice);
+  const onSale = product.compareAtKobo !== null;
   let tag: ReactNode = <ProductTag product={product} />;
-  if (variant === 'listing' && !product.soldOut && !onSale) {
-    if (product.listingNote)
-      tag = (
-        <span className="rounded-sm bg-store-page/95 px-[9px] py-1 text-2xs font-bold text-store-eyebrow">
-          {product.listingNote}
-        </span>
-      );
-    else if (product.isNew)
-      tag = (
-        <span className="rounded-sm bg-store-primary px-[9px] py-1 text-2xs font-bold text-store-primary-fg">
-          New
-        </span>
-      );
+  if (variant === 'listing' && !product.soldOut && !onSale && product.isNew) {
+    tag = (
+      <span className="rounded-sm bg-store-primary px-[9px] py-1 text-2xs font-bold text-store-primary-fg">
+        New
+      </span>
+    );
   }
   const imageHeight =
     variant === 'listing'
@@ -151,12 +177,11 @@ export function ProductCard({
       )}
     >
       <div className={cn('relative overflow-hidden rounded-[10px] bg-store-band', imageHeight)}>
-        <Image
-          src={product.image}
+        <StorePhoto
+          publicId={product.coverPublicId}
           alt={product.name}
-          fill
           sizes="(min-width: 768px) 25vw, 50vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          className="transition-transform duration-300 group-hover:scale-[1.02]"
         />
         {tag ? <div className="absolute top-3 left-3 flex">{tag}</div> : null}
       </div>
@@ -177,19 +202,20 @@ export function ProductCard({
               onSale ? 'text-store-eyebrow' : 'text-store-primary',
             )}
           >
-            {formatKobo(product.price)}
+            {product.priceVaries ? 'From ' : ''}
+            {formatKobo(product.priceKobo)}
           </span>
-          {product.compareAtPrice ? (
+          {product.compareAtKobo !== null ? (
             <s className="text-xs text-store-muted md:text-ui">
-              {formatKobo(product.compareAtPrice)}
+              {formatKobo(product.compareAtKobo)}
             </s>
           ) : null}
         </span>
-        {variant === 'home' ? (
+        {variant === 'home' && (product.soldOut || product.optionSummary) ? (
           <span
             className={cn('text-xs', product.soldOut ? 'text-store-eyebrow' : 'text-store-muted')}
           >
-            {product.soldOut ? 'Sold out' : product.sizesLabel}
+            {product.soldOut ? 'Sold out' : product.optionSummary}
           </span>
         ) : null}
       </div>
@@ -290,17 +316,11 @@ export function CartIconLink({ className }: { className?: string }) {
   return (
     <Link
       href="/cart"
-      aria-label={`Cart, ${CART_COUNT} items`}
+      aria-label="Cart"
       className={cn('relative inline-flex text-store-ink', className)}
     >
       <ShoppingBag className="size-[22px]" aria-hidden />
-      <span
-        className={
-          'absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-store-primary text-[9px] font-bold text-store-primary-fg'
-        }
-      >
-        {CART_COUNT}
-      </span>
+      <CartCount className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-store-primary text-[9px] font-bold text-store-primary-fg" />
     </Link>
   );
 }
@@ -346,10 +366,11 @@ export function StickyBar({ className, children }: { className?: string; childre
   );
 }
 
-export function WhatsAppFab() {
+export function WhatsAppFab({ href }: { href: string | null }) {
+  if (!href) return null;
   return (
     <a
-      href={STORE.whatsappHref}
+      href={href}
       aria-label="Chat on WhatsApp"
       className="fixed right-4 bottom-6 z-30 flex size-[52px] items-center justify-center rounded-full bg-success text-white shadow-fab md:hidden"
     >

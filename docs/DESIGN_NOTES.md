@@ -108,23 +108,23 @@ internal prefix):
 `(shop)` pages get the announcement bar, header and footer; `(checkout)` pages get the minimal
 checkout header (or a brand-only header for the result pages).
 
-| Screen                    | Route                                                                           | Status                                                                       |
-| ------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| 05.01 Home                | `/`                                                                             | UI built (store name and colour live from the API; catalogue is sample data) |
-| 05.02 Category            | `/shop`, `/shop/[category]` (`?q=` search)                                      | UI built                                                                     |
-| 05.03 Product             | `/products/[slug]`                                                              | UI built                                                                     |
-| 05.04 Cart                | `/cart`                                                                         | UI built                                                                     |
-| 05.05 Checkout            | `/checkout`                                                                     | UI built                                                                     |
-| 05.06 Order Confirmed     | `/checkout/confirmed`                                                           | UI built                                                                     |
-| 05.07 Payment Failed      | `/checkout/failed`                                                              | UI built                                                                     |
-| 05.08 Track Order         | `/track`                                                                        | UI built                                                                     |
-| 05.09 Our Story & Contact | `/about`                                                                        | UI built                                                                     |
-| 05.10 Returns Policy      | `/policies/[policy]` (returns, delivery, size-guide, privacy, terms)            | UI built                                                                     |
-| 05.11 Temporarily Closed  | shown automatically for DISABLED/SUSPENDED stores; preview at `/closed-preview` | UI built + live                                                              |
-| 05.12 Mobile – Home       | `/` (responsive, WhatsApp button)                                               | UI built                                                                     |
-| 05.13 Mobile – Product    | `/products/[slug]` (sticky Add to cart)                                         | UI built                                                                     |
-| 05.14 Mobile – Cart       | `/cart` (sticky Checkout)                                                       | UI built                                                                     |
-| 05.15 Mobile – Checkout   | `/checkout` (sticky Pay)                                                        | UI built                                                                     |
+| Screen                    | Route                                                                           | Status                                                                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 05.01 Home                | `/`                                                                             | **Live**: newest products, category tiles, newest photo as hero; hero copy / story band wait for the storefront editor               |
+| 05.02 Category            | `/shop`, `/shop/[category]` (`?q=` search)                                      | **Live**: category, price range, in stock, sort, search, pages; size/colour filters dropped (merchant-named options)                 |
+| 05.03 Product             | `/products/[slug]`                                                              | **Live**: photos, option pickers, per-variant price/availability, add to cart, related; delivery rows removed (no delivery data yet) |
+| 05.04 Cart                | `/cart`                                                                         | **Live**: cart saved in the browser; "Order on WhatsApp" until online checkout                                                       |
+| 05.05 Checkout            | `/checkout`                                                                     | UI built; redirects to the cart until payments (orders + Paystack)                                                                   |
+| 05.06 Order Confirmed     | `/checkout/confirmed`                                                           | UI built; redirects to the cart until payments                                                                                       |
+| 05.07 Payment Failed      | `/checkout/failed`                                                              | UI built; redirects to the cart until payments                                                                                       |
+| 05.08 Track Order         | `/track`                                                                        | UI built; shows "coming soon" until orders exist                                                                                     |
+| 05.09 Our Story & Contact | `/about`                                                                        | **Live** (contact channels from the store); story half waits for the storefront editor                                               |
+| 05.10 Returns Policy      | `/policies/[policy]` (returns, delivery, size-guide, privacy, terms)            | **Live** layout; text says the policy isn’t published yet (merchant policies not built); size guide dropped                          |
+| 05.11 Temporarily Closed  | shown automatically for DISABLED/SUSPENDED stores; preview at `/closed-preview` | UI built + live                                                                                                                      |
+| 05.12 Mobile – Home       | `/` (responsive, WhatsApp button)                                               | **Live** (as 05.01)                                                                                                                  |
+| 05.13 Mobile – Product    | `/products/[slug]` (sticky Add to cart)                                         | **Live** (as 05.03)                                                                                                                  |
+| 05.14 Mobile – Cart       | `/cart` (sticky Checkout)                                                       | **Live** (as 05.04)                                                                                                                  |
+| 05.15 Mobile – Checkout   | `/checkout` (sticky Pay)                                                        | UI built; redirects to the cart until payments                                                                                       |
 
 ### 06 Admin console — `(admin)` on `admin.`
 

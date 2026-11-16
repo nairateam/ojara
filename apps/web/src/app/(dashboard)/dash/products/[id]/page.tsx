@@ -67,6 +67,9 @@ export default async function EditProductPage({ params, searchParams }: Props) {
         storeName={summary.store.name}
         storeAddress={storeAddress}
         promotionsAllowed={limits.promotions}
+        storeId={membership.id}
+        maxImages={limits.maxImagesPerProduct}
+        maxImageBytes={limits.maxImageBytes}
         notice={notice}
       />
     </PageContainer>

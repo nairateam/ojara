@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -21,6 +22,8 @@ import {
   categorySchema,
   type ProductInput,
   productDetailSchema,
+  productImageOrderSchema,
+  productImageRegisterSchema,
   productInputSchema,
   type ProductListQuery,
   productListQuerySchema,
@@ -98,6 +101,44 @@ export class CatalogController {
   ) {
     return productDetailSchema.parse(
       await this.catalog.restoreProduct(storeId, user.id, productId),
+    );
+  }
+
+  /** Register a photo uploaded directly to Cloudinary (see POST /media/sign). */
+  @Post('products/:productId/images')
+  async addImage(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @CurrentUser() user: AuthUser,
+    @Body({ schema: productImageRegisterSchema }) body: { publicId: string },
+  ) {
+    return productDetailSchema.parse(
+      await this.catalog.addImage(storeId, user.id, productId, body.publicId),
+    );
+  }
+
+  /** Photo order, cover first. Declared before :imageId routes. */
+  @Put('products/:productId/images/order')
+  async reorderImages(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @CurrentUser() user: AuthUser,
+    @Body({ schema: productImageOrderSchema }) body: { ids: string[] },
+  ) {
+    return productDetailSchema.parse(
+      await this.catalog.reorderImages(storeId, user.id, productId, body.ids),
+    );
+  }
+
+  @Delete('products/:productId/images/:imageId')
+  async removeImage(
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Param('imageId') imageId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return productDetailSchema.parse(
+      await this.catalog.removeImage(storeId, user.id, productId, imageId),
     );
   }
 

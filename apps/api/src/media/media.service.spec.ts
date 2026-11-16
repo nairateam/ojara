@@ -23,6 +23,7 @@ function setup(opts: { imageCount?: number; configured?: boolean } = {}) {
         uploadUrl: 'https://api.cloudinary.com/v1_1/c/image/upload',
       };
     }),
+    getAsset: vi.fn(() => Promise.resolve(null)),
     delete: vi.fn(),
     buildUrl: vi.fn(),
   };
