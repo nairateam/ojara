@@ -10,6 +10,8 @@ export interface PlanLimits {
   customDomain: boolean;
   staffAccounts: number;
   removeBranding: boolean;
+  /** Ojara's share of each sale, in percent, kept by Paystack for the platform (0 = none). */
+  transactionFeePercent: number;
   /** Promotional (sale) prices on products. */
   promotions: boolean;
 }
@@ -40,6 +42,7 @@ export const PLANS: Record<PlanKey, PlanDefinition> = {
       staffAccounts: 1,
       removeBranding: false,
       promotions: false,
+      transactionFeePercent: 0,
     },
   },
   STARTER: {
@@ -55,6 +58,7 @@ export const PLANS: Record<PlanKey, PlanDefinition> = {
       staffAccounts: 1,
       removeBranding: true,
       promotions: true,
+      transactionFeePercent: 0,
     },
   },
   PROFESSIONAL: {
@@ -70,6 +74,7 @@ export const PLANS: Record<PlanKey, PlanDefinition> = {
       staffAccounts: 5,
       removeBranding: true,
       promotions: true,
+      transactionFeePercent: 0,
     },
   },
 };

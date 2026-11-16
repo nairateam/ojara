@@ -1,4 +1,4 @@
-import { slugAvailabilitySchema } from '@ojara/shared';
+import { payoutResolveSchema, slugAvailabilitySchema } from '@ojara/shared';
 import { z } from 'zod';
 import { clientEnv } from '@/env';
 import { apiRequest } from './client';
@@ -132,6 +132,23 @@ export function checkSlugAvailability(slug: string, storeId?: string, signal?: A
     path: `/stores/slug-availability?${query.toString()}`,
     credentials: 'include',
     schema: slugAvailabilitySchema,
+    ...(signal ? { signal } : {}),
+  });
+}
+
+/** Account name for a bank account, looked up by Paystack (live check in "Get paid"). */
+export function resolvePayoutAccount(
+  storeId: string,
+  bankCode: string,
+  accountNumber: string,
+  signal?: AbortSignal,
+) {
+  const query = new URLSearchParams({ bankCode, accountNumber });
+  return apiRequest({
+    baseUrl: clientEnv.NEXT_PUBLIC_API_URL,
+    path: `/stores/${encodeURIComponent(storeId)}/payouts/resolve?${query.toString()}`,
+    credentials: 'include',
+    schema: payoutResolveSchema,
     ...(signal ? { signal } : {}),
   });
 }

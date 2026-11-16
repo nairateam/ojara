@@ -4,14 +4,17 @@ import { AppConfigService } from '../config/app-config.service.js';
 import { PaystackClient } from './paystack.client.js';
 import { PaymentsReconcileJob } from './payments-reconcile.job.js';
 import { PaymentsController } from './payments.controller.js';
+import { PayoutsController } from './payouts.controller.js';
+import { PayoutsService } from './payouts.service.js';
 import { PaymentsProcessor } from './payments.processor.js';
 import { PAYMENTS_QUEUE, PaymentsService } from './payments.service.js';
 
 @Module({
   imports: [BullModule.registerQueue({ name: PAYMENTS_QUEUE })],
-  controllers: [PaymentsController],
+  controllers: [PaymentsController, PayoutsController],
   providers: [
     PaymentsService,
+    PayoutsService,
     PaymentsProcessor,
     PaymentsReconcileJob,
     {

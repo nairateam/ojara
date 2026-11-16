@@ -1,36 +1,30 @@
-import { formatKobo } from '@ojara/shared';
 import {
-  BadgeCheck,
-  Building2,
-  Landmark,
-  Lock,
-  type LucideIcon,
-  Receipt,
-  ShieldCheck,
-  ShoppingBag,
-  User,
-} from 'lucide-react';
+  formatKobo,
+  type PayoutAccountDto,
+  payoutAccountSchema,
+  payoutBankSchema,
+} from '@ojara/shared';
+import { Landmark, type LucideIcon, Receipt, ShieldCheck, ShoppingBag } from 'lucide-react';
 import type { Metadata } from 'next';
-import { choiceClass, OnbField, NativeSelect } from '@/components/onboarding/fields';
-import { ComingSoonNote } from '@/components/onboarding/coming-soon-note';
+import { redirect } from 'next/navigation';
+import { z } from 'zod';
 import { OnboardingShell } from '@/components/onboarding/onboarding-shell';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
-import { NIGERIAN_BANKS, PAYOUT, PAYOUT_EXAMPLE } from '@/mock/onboarding';
+import { PayoutFields } from '@/components/onboarding/payout-fields';
+import { ApiRequestError } from '@/lib/api/client';
+import { apiGet } from '@/lib/api/session';
 import { requireOnboardingStep } from '@/lib/auth/guards';
-import { continueFromPayments } from '../actions';
+import { cn } from '@/lib/utils';
+import { savePayoutAccount } from '../actions';
 
 export const metadata: Metadata = { title: 'Set up your store · Get paid' };
 
-const PAYEE_TYPES = [
-  { id: 'individual', title: 'Just me', sub: 'Individual or sole trader', icon: User },
-  {
-    id: 'business',
-    title: 'Registered business',
-    sub: 'Have a CAC BN or RC number',
-    icon: Building2,
-  },
-] as const;
+/** Paystack's local card pricing: 1.5% + ₦100 (waived under ₦2,500), capped at ₦2,000. */
+function paystackFeeKobo(amountKobo: number): number {
+  const fee = Math.round(amountKobo * 0.015) + (amountKobo >= 250_000 ? 10_000 : 0);
+  return Math.min(fee, 200_000);
+}
+
+const EXAMPLE_ORDER_KOBO = 2_700_000;
 
 function PayoutLine({
   icon: Icon,
@@ -72,39 +66,56 @@ function PayoutLine({
   );
 }
 
-function PayoutExample() {
+function PayoutExample({ account }: { account: PayoutAccountDto }) {
+  const fee = paystackFeeKobo(EXAMPLE_ORDER_KOBO);
+  const platform = Math.round((EXAMPLE_ORDER_KOBO * account.platformFeePercent) / 100);
+  const receive = EXAMPLE_ORDER_KOBO - fee - platform;
   return (
     <aside className="flex w-full flex-col gap-4" aria-label="Payout example">
       <h2 className="text-[11px] font-semibold tracking-[0.8px] text-fg-subtle uppercase">
-        How a {formatKobo(PAYOUT_EXAMPLE.orderKobo)} order is paid out
+        How a {formatKobo(EXAMPLE_ORDER_KOBO)} order is paid out
       </h2>
       <ul className="rounded-[14px] border border-line bg-surface p-5">
         <PayoutLine
           icon={ShoppingBag}
           label="Customer pays"
           sub="Card, transfer or USSD"
-          value={formatKobo(PAYOUT_EXAMPLE.orderKobo)}
+          value={formatKobo(EXAMPLE_ORDER_KOBO)}
         />
         <PayoutLine
           icon={Receipt}
           label="Paystack fee"
           sub="1.5% + ₦100, capped at ₦2,000"
-          value={formatKobo(-PAYOUT_EXAMPLE.feeKobo)}
+          value={formatKobo(-fee)}
           tone="danger"
         />
+        {platform > 0 ? (
+          <PayoutLine
+            icon={Receipt}
+            label="Ojara fee"
+            sub={`${account.platformFeePercent}% of each sale`}
+            value={formatKobo(-platform)}
+            tone="danger"
+          />
+        ) : null}
         <PayoutLine
           icon={Landmark}
           label="You receive"
-          sub={`${PAYOUT.bank} ••${PAYOUT.accountLast4} · next business day`}
-          value={formatKobo(PAYOUT_EXAMPLE.receiveKobo)}
+          sub={
+            account.connected
+              ? `${account.bankName} ••${account.accountLast4} · usually next business day`
+              : 'Your bank account · usually next business day'
+          }
+          value={formatKobo(receive)}
           tone="success"
         />
       </ul>
       <div className="flex flex-col gap-1.5 rounded-lg bg-surface-muted p-4 text-fg">
         <p className="text-ui font-semibold">Your Ojara plan is billed separately</p>
         <p className="text-xs leading-[18px]">
-          Ojara takes no cut of your sales. Paid plans are a flat monthly fee, charged to a card you
-          choose later.
+          {account.platformFeePercent > 0
+            ? `Ojara keeps ${account.platformFeePercent}% of each sale. Paid plans are a flat monthly fee.`
+            : 'Ojara takes no cut of your sales. Paid plans are a flat monthly fee, charged to a card you choose later.'}
         </p>
       </div>
       <p className="text-[11px] text-fg-subtle">
@@ -114,131 +125,57 @@ function PayoutExample() {
   );
 }
 
-/** 02.07 Onboarding 4 · Get paid with Paystack (visual form). */
+/**
+ * 02.07 Onboarding 4 · Get paid: link the bank account Paystack pays sales into (the store's
+ * Paystack subaccount). Optional during onboarding ("Skip for now"); needed before customers can
+ * pay online.
+ */
 export default async function OnboardingPaymentsPage() {
   const { store, reached } = await requireOnboardingStep(4);
+  if (!store) redirect('/onboarding');
+  const base = `/stores/${encodeURIComponent(store.id)}/payouts` as const;
+
+  let banks: z.infer<typeof payoutBankSchema>[] = [];
+  let unavailable: string | null = null;
+  const account = await apiGet(`${base}/account`, payoutAccountSchema);
+  try {
+    banks = await apiGet(`${base}/banks`, z.array(payoutBankSchema));
+  } catch (err) {
+    if (!(err instanceof ApiRequestError)) throw err;
+    unavailable = err.message;
+  }
+
   return (
     <OnboardingShell
       step={4}
       reached={reached}
       store={store}
-      action={continueFromPayments}
-      notice={
-        <ComingSoonNote>
-          Paystack payouts are being set up. Nothing below is saved yet — continue for now; you’ll
-          connect your bank before taking payments.
-        </ComingSoonNote>
-      }
+      action={savePayoutAccount}
       title="Where should we send your money?"
       subtitle="Customers pay with Paystack. Paystack sends the money straight to your bank account — Ojara never holds it."
       formClassName="gap-[26px]"
       previewClassName="max-w-[420px] min-[1340px]:w-[360px] min-[1340px]:max-w-none"
-      preview={<PayoutExample />}
+      preview={<PayoutExample account={account} />}
     >
-      <fieldset>
-        <legend className="mb-2 text-ui font-semibold text-fg">Who receives the payouts?</legend>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {PAYEE_TYPES.map((t, i) => (
-            <label
-              key={t.id}
-              className={cn(choiceClass, 'flex items-center gap-3 rounded-[10px] p-3.5')}
-            >
-              <input
-                type="radio"
-                name="payee"
-                value={t.id}
-                defaultChecked={i === 0}
-                className="peer sr-only"
-              />
-              <span className="flex size-[34px] shrink-0 items-center justify-center rounded-md bg-surface-muted text-fg">
-                <t.icon className="size-4" aria-hidden />
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="text-ui font-semibold text-fg">{t.title}</span>
-                <span className="text-xs text-fg-muted">{t.sub}</span>
-              </span>
-              <span
-                aria-hidden
-                className="size-4 shrink-0 rounded-full border-[1.5px] border-line-strong bg-surface peer-checked:border-[5px] peer-checked:border-forest"
-              />
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-        <OnbField label="Bank" htmlFor="bank">
-          <NativeSelect
-            id="bank"
-            name="bank"
-            defaultValue={PAYOUT.bank}
-            leading={
-              <span className="flex size-[22px] items-center justify-center rounded-[5px] bg-[#DD4F05] text-[11px] font-bold text-surface">
-                {PAYOUT.bankInitial}
-              </span>
-            }
-          >
-            {NIGERIAN_BANKS.map((b) => (
-              <option key={b}>{b}</option>
-            ))}
-          </NativeSelect>
-        </OnbField>
-        <OnbField label="Account number" htmlFor="account-number">
-          <Input
-            id="account-number"
-            name="accountNumber"
-            size="lg"
-            inputMode="numeric"
-            autoComplete="off"
-            defaultValue={PAYOUT.accountNumber}
-            className="tracking-[0.5px]"
-          />
-        </OnbField>
-      </div>
-
-      <div
-        className="flex items-center gap-3 rounded-[10px] bg-success-soft px-3.5 py-3 text-success"
-        role="status"
-      >
-        <BadgeCheck className="size-[18px] shrink-0" aria-hidden />
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-ui font-bold tracking-[0.3px]">{PAYOUT.accountName}</span>
-          <span className="text-xs">
-            Account name confirmed by your bank. Payouts arrive the next business day.
-          </span>
-        </span>
-        <button type="button" className="shrink-0 text-xs font-semibold hover:underline">
-          Change
-        </button>
-      </div>
-
-      <OnbField label="BVN (last 4 digits)" htmlFor="bvn">
-        <div className="w-[200px] max-w-full">
-          <Input
-            id="bvn"
-            name="bvnLast4"
-            size="lg"
-            inputMode="numeric"
-            maxLength={4}
-            autoComplete="off"
-            prefix={<span className="tracking-[1px] whitespace-nowrap">•••• •••</span>}
-            defaultValue={PAYOUT.bvnLast4}
-          />
-        </div>
-        <p className="text-xs text-fg-muted">
-          Paystack needs this to verify payouts. We never see or store your full BVN.
+      {account.testMode ? (
+        <p className="rounded-[10px] bg-attention-soft px-3.5 py-3 text-xs leading-[17px] text-[#6E4A0E]">
+          <span className="font-semibold">Test mode.</span> Paystack test keys are in use, so no
+          real money moves. Paystack still needs a real bank account number to set up payouts.
         </p>
-      </OnbField>
+      ) : null}
+      {unavailable ? (
+        <p role="alert" className="rounded-[10px] bg-danger-soft px-3.5 py-3 text-ui text-danger">
+          {unavailable}
+        </p>
+      ) : (
+        <PayoutFields storeId={store.id} banks={banks} account={account} />
+      )}
 
-      <ul className="flex flex-wrap gap-x-[18px] gap-y-2 text-xs text-fg-muted">
-        <li className="flex items-center gap-1.5">
-          <Lock className="size-[13px] text-fg-subtle" aria-hidden /> Bank-grade encryption
-        </li>
-        <li className="flex items-center gap-1.5">
-          <ShieldCheck className="size-[13px] text-fg-subtle" aria-hidden /> Licensed by the CBN via
-          Paystack
-        </li>
-      </ul>
+      <p className="flex items-center gap-1.5 text-xs text-fg-muted">
+        <ShieldCheck className="size-[13px] text-fg-subtle" aria-hidden />
+        Payments and payouts are handled by Paystack. Ojara stores only your bank name and the last
+        4 digits of the account.
+      </p>
     </OnboardingShell>
   );
 }

@@ -5,6 +5,8 @@ import {
   instagramHandleSchema,
   NIGERIAN_STATES,
   nigerianPhoneSchema,
+  payoutAccountInputSchema,
+  payoutAccountSchema,
   STORE_CATEGORY_IDS,
   brandColourSchema,
   storeSchema,
@@ -179,7 +181,47 @@ async function continueFrom(step: 3 | 4 | 5): Promise<OnboardingFormState> {
 export async function continueFromProducts(): Promise<OnboardingFormState> {
   return continueFrom(3);
 }
+/** "Skip for now" on step 4: move on without linking a bank account. */
 export async function continueFromPayments(): Promise<OnboardingFormState> {
+  return continueFrom(4);
+}
+
+/**
+ * Step 4: link the payout bank account (creates the store's Paystack subaccount). With no account
+ * details submitted, an already-connected store just moves on.
+ */
+export async function savePayoutAccount(
+  _prev: OnboardingFormState,
+  data: FormData,
+): Promise<OnboardingFormState> {
+  const store = await requireStore();
+  const bankCode = text(data, 'bankCode');
+  const accountNumber = text(data, 'accountNumber').replace(/\s/g, '');
+  const connected = text(data, 'connected') === '1';
+
+  if (!bankCode && !accountNumber && connected) return continueFrom(4);
+
+  const parsed = payoutAccountInputSchema.safeParse({ bankCode, accountNumber });
+  if (!parsed.success) {
+    return fieldErrors(parsed.error, {});
+  }
+  try {
+    await apiWrite(
+      'PUT',
+      `/stores/${encodeURIComponent(store.id)}/payouts/account`,
+      payoutAccountSchema,
+      parsed.data,
+    );
+  } catch (err) {
+    if (err instanceof ApiRequestError && err.status === 400) {
+      return { fieldErrors: { accountNumber: err.message }, message: err.message };
+    }
+    if (err instanceof ApiRequestError && err.status === 403) {
+      return { message: 'Only the store owner can set where payouts go.' };
+    }
+    if (err instanceof ApiRequestError && err.status === 503) return { message: err.message };
+    return apiFailure(err);
+  }
   return continueFrom(4);
 }
 export async function continueFromDelivery(): Promise<OnboardingFormState> {

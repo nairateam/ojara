@@ -5,12 +5,11 @@ section. Dates are 2026.
 
 ## Open questions (need a product decision)
 
-1. **Who holds customer money?** Either Ojara collects payments and pays merchants out (Ojara
-   holds funds: likely needs a licence/escrow arrangement and payout logic), or each store gets a
-   Paystack **subaccount** and Paystack splits the money at checkout (funds go straight to the
-   merchant; Ojara never holds them). The schema supports both (`Store.paystackSubaccountCode`,
-   `PaystackClient.createSubaccount` stub). The onboarding "Get paid" step (02.07) collects bank
-   details, which fits subaccounts. **Recommendation: subaccounts.**
+1. ~~**Who holds customer money?**~~ **Decided 2026-11-16: Paystack subaccounts.** Each store
+   links a bank account and gets a subaccount, and Paystack pays the merchant directly; Ojara never
+   holds customer funds.
+   - Platform fee: **0% for now**, configurable per plan (`PLANS[...].transactionFeePercent`).
+     Paystack keeps that share for Ojara's main account; the merchant bears Paystack's own fee.
 2. **"Draft" vs "Onboarding" store status.** The admin designs show both; the data model has one
    (`DRAFT`, labelled "Onboarding"). Should they be separate statuses?
 3. **What does `DISABLED` mean?** It never appears in the designs. Currently it is the merchant's

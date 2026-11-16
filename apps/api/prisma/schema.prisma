@@ -250,8 +250,14 @@ model Store {
   // Delivery
   pickupEnabled          Boolean     @default(false)
   pickupAddress          String?
-  // Paystack subaccount (only if Ojara routes funds; see DECISIONS.md open questions)
+  // Paystack subaccount: sales settle to the merchant directly (DECISIONS.md, payments).
   paystackSubaccountCode String?
+  /// Payout account shown back to the merchant (the full number stays with Paystack).
+  payoutBankCode         String?
+  payoutBankName         String?
+  payoutAccountName      String?
+  payoutAccountLast4     String?     @db.VarChar(4)
+  payoutConnectedAt      DateTime?
   createdAt              DateTime    @default(now())
   updatedAt              DateTime    @updatedAt
   archivedAt             DateTime?
