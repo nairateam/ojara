@@ -73,7 +73,7 @@ internal prefix):
 | 02.05 Onboarding 2 – Store Setup       | `/onboarding/store`                      | **Live**: name, address (live availability check), brand colour; logo later      |
 | 02.06 Onboarding 3 – Add Products      | `/onboarding/products`                   | UI + saved progress; "coming soon" note (needs image uploads)                    |
 | 02.07 Onboarding 4 – Get Paid          | `/onboarding/payments`                   | UI + saved progress; "coming soon" note (needs Paystack decision)                |
-| 02.08 Onboarding 5 – Delivery          | `/onboarding/delivery`                   | UI + saved progress; "coming soon" note (needs delivery feature)                 |
+| 02.08 Onboarding 5 – Delivery          | `/onboarding/delivery`                   | **Live**: same editor as 03.11; saves, then continues                            |
 | 02.09 Onboarding 6 – Preview & Publish | `/onboarding/publish`                    | **Live**: real checklist; publishes the store (owner only)                       |
 
 ### 03 Merchant app (desktop) and 04 Merchant app (mobile) — `(dashboard)` on `app.`
@@ -90,7 +90,7 @@ internal prefix):
 | 03.08 Reports                        | `/reports`                                       | UI built                                                                                                                                               |
 | 03.09 Categories                     | `/categories` (`?category=`)                     | **Live**: create/edit, menu on/off, order (up/down buttons, not drag), archive/restore, products list; cover images not built                          |
 | 03.10 Storefront Editor              | `/storefront` (`?device=mobile`)                 | UI built                                                                                                                                               |
-| 03.11 Delivery                       | `/delivery`                                      | UI built                                                                                                                                               |
+| 03.11 Delivery                       | `/delivery`                                      | **Live**: zones (charge, arrives, covers, on/off), free-delivery threshold, pickup, processing notes; checkout preview                                 |
 | 03.12 Payments                       | `/payments` (`?tab=payouts`, `?tab=refunds`)     | UI built                                                                                                                                               |
 | 03.13 Domains                        | `/domains`                                       | UI built                                                                                                                                               |
 | 03.14 Help & Support                 | `/help`                                          | UI built                                                                                                                                               |

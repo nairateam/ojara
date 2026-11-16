@@ -274,6 +274,16 @@ unless noted.
     - `/track` says tracking is coming soon.
   - Content merchants can't write yet (hero copy, story, announcement bar, policies) uses neutral
     defaults built from the store, rather than the design's sample text.
+- **Delivery & pickup:**
+  - One editor serves both Settings → Delivery and onboarding step 5. It saves the whole setup in
+    one request (`PUT /stores/:id/delivery`).
+  - Zones are matched by id, and a removed zone is archived rather than deleted, so past orders
+    keep their zone.
+  - Rules: delivery on needs at least one active zone; pickup on needs an address; at least one of
+    the two must be on.
+  - Free delivery over a threshold applies to every zone.
+  - Shoppers only see active zones (`storefront.delivery`). The cart shows "From ₦… · free pickup"
+    and progress towards free delivery; checkout will use the zones.
 - **Database waking up:** Prisma transactions may take up to 10 s to start (default 2 s). Neon
   suspends idle compute, and the first query after a quiet period failed while it resumed.
 - **Onboarding** (`app/(onboarding)/dash/onboarding`):

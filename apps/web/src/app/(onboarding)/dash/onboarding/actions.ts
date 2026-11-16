@@ -17,6 +17,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { clientEnv } from '@/env';
 import { ApiRequestError } from '@/lib/api/client';
+import { saveDeliveryPayload } from '@/lib/delivery/save';
 import { apiWrite } from '@/lib/api/session';
 import {
   ACTIVE_STORE_COOKIE,
@@ -224,7 +225,14 @@ export async function savePayoutAccount(
   }
   return continueFrom(4);
 }
-export async function continueFromDelivery(): Promise<OnboardingFormState> {
+/** Step 5: save delivery zones and pickup, then open step 6. */
+export async function saveDeliveryStep(
+  _prev: OnboardingFormState,
+  data: FormData,
+): Promise<OnboardingFormState> {
+  const store = await requireStore();
+  const failure = await saveDeliveryPayload(store.id, data);
+  if (failure) return failure;
   return continueFrom(5);
 }
 

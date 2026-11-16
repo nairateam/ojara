@@ -10,6 +10,7 @@ import {
 } from '@ojara/shared';
 import type { z } from 'zod';
 import { PrismaService } from '../database/prisma.service.js';
+import { DeliveryService } from '../delivery/delivery.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { TenantContext } from '../tenancy/tenant-context.js';
 import {
@@ -54,7 +55,10 @@ type CardRow = Prisma.ProductGetPayload<{ select: typeof cardSelect }>;
  */
 @Injectable()
 export class StorefrontService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly delivery: DeliveryService,
+  ) {}
 
   private run<T>(storeId: string, fn: (tx: Tx, promotions: boolean) => Promise<T>): Promise<T> {
     return TenantContext.runForStore(storeId, () =>
@@ -135,6 +139,7 @@ export class StorefrontService {
         removeBranding: PLANS[plan.key].limits.removeBranding,
         categories: categories.map(({ id: _id, ...c }) => c),
         productCount: products.length,
+        delivery: await this.delivery.forStorefront(tx, storeId),
       };
     });
   }

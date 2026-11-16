@@ -250,6 +250,15 @@ model Store {
   // Delivery
   pickupEnabled          Boolean     @default(false)
   pickupAddress          String?
+  pickupHours            String?
+  /// Delivery to the zones below is offered at checkout.
+  deliveryEnabled        Boolean     @default(true)
+  /// Free delivery when the order subtotal is at least this much (null = never free).
+  freeDeliveryOverKobo   Int?
+  /// Shown on checkout and order confirmation: when orders are ready, same-day cut-off, a note.
+  orderReadyIn           String?
+  sameDayCutoff          String?
+  orderConfirmationNote  String?
   // Paystack subaccount: sales settle to the merchant directly (DECISIONS.md, payments).
   paystackSubaccountCode String?
   /// Payout account shown back to the merchant (the full number stays with Paystack).
@@ -542,6 +551,9 @@ model DeliveryZone {
   /// e.g. ["Lekki", "Ajah", "Victoria Island"]
   areas      Json      @default("[]")
   isActive   Boolean   @default(true)
+  /// Shown to shoppers, e.g. "1–2 days".
+  eta        String?   @db.VarChar(40)
+  position   Int       @default(0)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   archivedAt DateTime?

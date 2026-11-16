@@ -1,10 +1,17 @@
 'use client';
 
-import { formatKobo } from '@ojara/shared';
+import { formatKobo, type StorefrontDeliveryDto } from '@ojara/shared';
 import { ArrowLeft, MessageCircle, ShoppingBag, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { type CartLine, useCart } from './cart';
-import { MobileSubHeader, StickyBar, StoreLinkButton, StorePhoto, storeButton } from './primitives';
+import {
+  FreeDeliveryProgress,
+  MobileSubHeader,
+  StickyBar,
+  StoreLinkButton,
+  StorePhoto,
+  storeButton,
+} from './primitives';
 import { QuantityStepper } from './quantity-stepper';
 
 function LineThumb({ line, className }: { line: CartLine; className: string }) {
@@ -30,9 +37,26 @@ function orderMessage(lines: CartLine[], subtotalKobo: number): string {
  * 05.04 Cart / 05.14 Mobile – Cart, from the cart saved in this browser. Online checkout waits
  * for payments; until then shoppers can send the order to the store on WhatsApp.
  */
-export function CartView({ whatsappHref }: { whatsappHref: string | null }) {
+/** Short delivery summary for the cart, from the store's zones and pickup. */
+function deliveryText(delivery: StorefrontDeliveryDto): string {
+  const fees = delivery.zones.map((z) => z.feeKobo);
+  const from = fees.length ? `From ${formatKobo(Math.min(...fees))}` : null;
+  if (from && delivery.pickup) return `${from} · free pickup`;
+  if (from) return `${from} · at checkout`;
+  if (delivery.pickup) return 'Free pickup';
+  return 'Agreed with the store';
+}
+
+export function CartView({
+  whatsappHref,
+  delivery,
+}: {
+  whatsappHref: string | null;
+  delivery: StorefrontDeliveryDto;
+}) {
   const { lines, count, subtotalKobo, setQty, remove } = useCart();
   const total = formatKobo(subtotalKobo);
+  const freeOver = delivery.zones.length ? delivery.freeDeliveryOverKobo : null;
   const orderHref = whatsappHref
     ? `${whatsappHref}?text=${encodeURIComponent(orderMessage(lines, subtotalKobo))}`
     : null;
@@ -73,6 +97,7 @@ export function CartView({ whatsappHref }: { whatsappHref: string | null }) {
 
       {/* Mobile (05.14) */}
       <div className="flex flex-col gap-3.5 p-4 md:hidden">
+        {freeOver ? <FreeDeliveryProgress subtotal={subtotalKobo} threshold={freeOver} /> : null}
         <ul className="flex flex-col gap-3.5">
           {lines.map((line) => (
             <li
@@ -119,7 +144,7 @@ export function CartView({ whatsappHref }: { whatsappHref: string | null }) {
           </div>
           <div className="flex justify-between">
             <dt className="text-store-body">Delivery</dt>
-            <dd className="font-medium text-store-ink">Agreed with the store</dd>
+            <dd className="font-medium text-store-ink">{deliveryText(delivery)}</dd>
           </div>
         </dl>
       </div>
@@ -187,6 +212,9 @@ export function CartView({ whatsappHref }: { whatsappHref: string | null }) {
           </ul>
           <aside className="flex w-full flex-col gap-[18px] rounded-[14px] border border-store-border bg-store-card p-6 lg:w-[400px] lg:shrink-0">
             <h2 className="font-serif text-[22px] font-medium text-store-ink">Order summary</h2>
+            {freeOver ? (
+              <FreeDeliveryProgress subtotal={subtotalKobo} threshold={freeOver} />
+            ) : null}
             <dl className="flex flex-col gap-[18px] text-sm">
               <div className="flex justify-between">
                 <dt className="text-store-body">
@@ -196,7 +224,7 @@ export function CartView({ whatsappHref }: { whatsappHref: string | null }) {
               </div>
               <div className="flex justify-between">
                 <dt className="text-store-body">Delivery</dt>
-                <dd className="font-medium text-store-ink">Agreed with the store</dd>
+                <dd className="font-medium text-store-ink">{deliveryText(delivery)}</dd>
               </div>
               <div className="flex items-center justify-between border-t border-store-border pt-[18px]">
                 <dt className="text-title font-semibold text-store-ink">Total</dt>

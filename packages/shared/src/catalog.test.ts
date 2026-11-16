@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { productInputSchema, slugify, variantKey, variantLabel } from './index.js';
+import {
+  deliverySettingsInputSchema,
+  productInputSchema,
+  slugify,
+  variantKey,
+  variantLabel,
+} from './index.js';
 
 const base = {
   name: 'Adire Wrap Dress',
@@ -112,5 +118,32 @@ describe('catalogue helpers', () => {
   it('slugifies names', () => {
     expect(slugify('Àṣọ Òkè Tote & Bag!')).toBe('aso-oke-tote-and-bag');
     expect(slugify('???')).toBe('item');
+  });
+});
+
+describe('deliverySettingsInputSchema', () => {
+  const base = {
+    deliveryEnabled: true,
+    freeDeliveryOverKobo: null,
+    pickupEnabled: false,
+    pickupAddress: null,
+    pickupHours: null,
+    orderReadyIn: null,
+    sameDayCutoff: null,
+    orderConfirmationNote: null,
+    zones: [{ name: 'Mainland', areas: ['Yaba'], feeKobo: 200_000, eta: '', isActive: true }],
+  };
+  const paths = (input: unknown) =>
+    deliverySettingsInputSchema.safeParse(input).error?.issues.map((i) => i.path.join('.')) ?? [];
+
+  it('accepts a normal setup and blanks optional text', () => {
+    expect(deliverySettingsInputSchema.parse(base).zones[0]?.eta).toBeNull();
+  });
+
+  it('needs a pickup address, an active zone when delivering, and some way to get orders', () => {
+    expect(paths({ ...base, pickupEnabled: true })).toContain('pickupAddress');
+    expect(paths({ ...base, zones: [{ ...base.zones[0], isActive: false }] })).toContain('zones');
+    expect(paths({ ...base, deliveryEnabled: false })).toContain('deliveryEnabled');
+    expect(paths({ ...base, zones: [base.zones[0], { ...base.zones[0] }] })).toContain('zones');
   });
 });

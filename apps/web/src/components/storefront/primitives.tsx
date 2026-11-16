@@ -264,8 +264,8 @@ export function FreeDeliveryProgress({
     <div className={cn('flex flex-col gap-2 rounded-[10px] bg-store-band p-3 md:p-3.5', className)}>
       <p className="text-xs font-semibold text-store-ink md:text-ui">
         {remaining > 0
-          ? `Add ${formatKobo(remaining)} more for free Lagos delivery`
-          : 'You’ve unlocked free Lagos delivery'}
+          ? `Add ${formatKobo(remaining)} more for free delivery`
+          : 'You’ve unlocked free delivery'}
       </p>
       <div
         role="progressbar"

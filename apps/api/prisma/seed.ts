@@ -95,6 +95,8 @@ async function main() {
       state: 'Lagos',
       pickupEnabled: true,
       pickupAddress: '12 Admiralty Way, Lekki Phase 1, Lagos',
+      pickupHours: 'Mon–Sat, 10am – 6pm',
+      freeDeliveryOverKobo: 4_000_000,
     },
   });
 
@@ -108,6 +110,26 @@ async function main() {
   if (!hasSubscription) {
     await prisma.subscription.create({
       data: { storeId: store.id, planId: free.id, status: 'ACTIVE' },
+    });
+  }
+
+  const zoneCount = await prisma.deliveryZone.count({ where: { storeId: store.id } });
+  if (zoneCount === 0) {
+    await prisma.deliveryZone.createMany({
+      data: [
+        {
+          name: 'Lagos Mainland',
+          areas: ['Yaba', 'Surulere', 'Ikeja'],
+          feeKobo: 200_000,
+          eta: '1–2 days',
+        },
+        {
+          name: 'Lekki & VI',
+          areas: ['Lekki', 'Ajah', 'Victoria Island'],
+          feeKobo: 250_000,
+          eta: '1–2 days',
+        },
+      ].map((z, position) => ({ ...z, storeId: store.id, position })),
     });
   }
 

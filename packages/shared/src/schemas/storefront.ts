@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { storefrontDeliverySchema } from './delivery.js';
 
 /**
  * Public storefront data (what shoppers see). Served by GET /v1/internal/storefront/:storeId/*
@@ -28,6 +29,8 @@ export const storefrontStoreSchema = z.object({
   /** Categories shown in the store menu, in menu order. */
   categories: z.array(storefrontCategorySchema),
   productCount: z.number().int(),
+  /** Delivery zones and pickup offered at checkout. */
+  delivery: storefrontDeliverySchema,
 });
 export type StorefrontStoreDto = z.infer<typeof storefrontStoreSchema>;
 
