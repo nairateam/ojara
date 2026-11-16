@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ApiRequestError } from '@/lib/api/client';
 import { requestPasswordReset, resetPassword } from '@/lib/api/browser';
-import { textField } from './form-data';
+import { BREACHED_PASSWORD_MESSAGE, textField } from './form-data';
 import { FormField } from './form-field';
 import { PasswordInput, scorePassword, StrengthMeter } from './password-input';
 
@@ -97,7 +97,7 @@ export function NewPasswordForm({ token }: { token: string }) {
       router.push('/login?reset=done');
     } catch (err) {
       if (err instanceof ApiRequestError && err.code === 'PASSWORD_COMPROMISED') {
-        setError('This password has appeared in a data breach. Please choose a different one.');
+        setError(BREACHED_PASSWORD_MESSAGE);
       } else if (err instanceof ApiRequestError && err.code === 'INVALID_TOKEN') {
         setError('This reset link has expired or was already used. Request a new one.');
       } else {

@@ -9,7 +9,7 @@ import { ApiRequestError } from '@/lib/api/client';
 import { signUpWithEmail } from '@/lib/api/browser';
 import { OrDivider } from './auth-shell';
 import { GoogleButton } from './google-button';
-import { textField } from './form-data';
+import { BREACHED_PASSWORD_MESSAGE, textField } from './form-data';
 import { FormField } from './form-field';
 import { PasswordInput, scorePassword, StrengthMeter } from './password-input';
 
@@ -21,7 +21,7 @@ import { PasswordInput, scorePassword, StrengthMeter } from './password-input';
 function signupErrorMessage(err: unknown): string {
   if (!(err instanceof ApiRequestError)) return 'Something went wrong. Please try again.';
   if (err.code === 'PASSWORD_COMPROMISED') {
-    return 'This password has appeared in a data breach. Please choose a different one.';
+    return BREACHED_PASSWORD_MESSAGE;
   }
   if (err.status === 429) return 'Too many attempts. Please wait a minute and try again.';
   return err.body ? err.message : 'Something went wrong. Please try again.';
